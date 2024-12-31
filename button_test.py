@@ -16,7 +16,13 @@ class Button:
         return not GPIO.input(self.switch_pin)
         
 
-buttons= [Button(20,26)]
+buttons= [
+    Button(20,26),
+    Button(16, 19),
+    Button(16, 19),
+    Button(6, 5),
+    Button(23, 22),
+]
 
 
 # Set up GPIO using BCM numbering
