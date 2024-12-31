@@ -36,10 +36,11 @@ for button in buttons:
     GPIO.setup(button.switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def game_loop():
-    if button.is_pressed():
-        button.set_led(True)
-    else:
-        button.set_led(False)
+    for button in buttons:
+        if button.is_pressed():
+            button.set_led(True)
+        else:
+            button.set_led(False)
 
 
 """
