@@ -24,11 +24,11 @@ class Button:
         
 
 buttons= {
-    Color.red:    Button(20,26),
-    Color.green:  Button(16, 19),
-    Color.white:  Button(13, 12),
-    Color.yellow: Button(6, 5),
-    Color.blue:   Button(23, 22),
+    Color.RED:    Button(20,26),
+    Color.GREEN:  Button(16, 19),
+    Color.WHITE:  Button(13, 12),
+    Color.YELLOW: Button(6, 5),
+    Color.BLUE:   Button(23, 22),
 }
 
 
