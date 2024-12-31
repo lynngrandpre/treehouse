@@ -19,7 +19,7 @@ class Button:
 buttons= [
     Button(20,26),
     Button(16, 19),
-    Button(16, 19),
+    Button(13, 12),
     Button(6, 5),
     Button(23, 22),
 ]
