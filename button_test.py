@@ -37,9 +37,10 @@ for button in buttons:
 
 def game_loop():
     for button in buttons:
-        if button.is_pressed():
+        if not button.is_pressed():
             button.set_led(True)
         else:
+            print("DOWN!")
             button.set_led(False)
 
 
