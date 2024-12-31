@@ -1,8 +1,15 @@
+from enum import Enum
 import RPi.GPIO as GPIO
 import time
 
 from dataclasses import dataclass
 
+class Color(Enum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+    YELLOW = 4
+    WHITE = 5
 
 @dataclass
 class Button:
@@ -16,13 +23,13 @@ class Button:
         return not GPIO.input(self.switch_pin)
         
 
-buttons= [
-    Button(20,26),
-    Button(16, 19),
-    Button(13, 12),
-    Button(6, 5),
-    Button(23, 22),
-]
+buttons= {
+    Color.red:    Button(20,26),
+    Color.green:  Button(16, 19),
+    Color.white:  Button(13, 12),
+    Color.yellow: Button(6, 5),
+    Color.blue:   Button(23, 22),
+}
 
 
 # Set up GPIO using BCM numbering
@@ -31,16 +38,16 @@ GPIO.setmode(GPIO.BCM)
 # Set GPIO PIN as output
 # Set GPIO PIN_IN as input
 
-for button in buttons:
+for button in buttons.values():
     GPIO.setup(button.led_pin, GPIO.OUT)
     GPIO.setup(button.switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def game_loop():
-    for button in buttons:
+    for (color, button) in buttons.items():
         if not button.is_pressed():
             button.set_led(True)
         else:
-            print("DOWN!")
+            print(f"{color} DOWN!")
             button.set_led(False)
 
 
