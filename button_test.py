@@ -13,7 +13,7 @@ class Button:
         GPIO.output(self.led_pin, on) 
     
     def is_pressed(self):
-        return GPIO.input(self.switch_pin)
+        return not GPIO.input(self.switch_pin)
         
 
 buttons= [Button(20,26)]
