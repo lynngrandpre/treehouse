@@ -75,9 +75,6 @@ for button in buttons.values():
     GPIO.setup(button.led_pin, GPIO.OUT)
     GPIO.setup(button.switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-def game_loop():
-
-
 # Main loop
 while running:
     # Look at every event in the queue
