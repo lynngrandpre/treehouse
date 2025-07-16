@@ -8,21 +8,16 @@ import RPi.GPIO as GPIO
 
 from enum import Enum
 
-CANVAS_WIDTH     = 800   # Width  of canvas   
-CANVAS_HEIGHT    = 400   # Height of canvas
-BALL_SIZE        = 25    # ball to play with
-BUTTON_SIZE      = 75    # diameter of the buttons 
-GOAL             = 50     # number of correct guesses to end game
 DONE             = 5     # number of incorrect guesses to end the game
-DELAY            = 0.0001 # for my bouncing ball at the end
-INITIAL_VELOCITY = 5     # for the ball
-PADDLE_WIDTH     = 50    # of course we need a paddle
-PADDLE_HEIGHT    = 15    # and a paddle needs some thickness
-PADDLE_VELOCITY  = 5     # How fast the paddle moves
 
-state_font = pygame.font.SysFont(None, 20)
-answer_font = pygame.font.SysFont(None, 15)
-scoreboard_font = pygame.font.SysFont(None, 30)
+
+
+pygame.init()
+pygame.mouse.set_visible(False) # Hide cursor here
+
+state_font = pygame.font.SysFont("", 60)
+answer_font = pygame.font.SysFont("", 25)
+scoreboard_font = pygame.font.SysFont("", 30)
 
 
 class Color(Enum):
@@ -76,6 +71,8 @@ buttons= {
     Color.BLUE:   Button(23, 22, RGB(0,0,255)),
 }
 
+buttons_in_order = [buttons[c] for c in [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.WHITE]]
+
 
 # Set up GPIO using BCM numbering
 GPIO.setmode(GPIO.BCM)
@@ -96,38 +93,122 @@ class Input:
 class Score:
     correct: int
     wrong: int
+    remaining_questions: "list[Question]"
 
-    def question_answered(self, correct):
+    def question_answered(self, correct, question):
         if correct:
-            return replace(self, correct=self.correct + 1)
+            return replace(
+                self, 
+                correct=self.correct + 1, 
+                remaining_questions=[s for s in self.remaining_questions if s != question]
+            )
         else:
             return replace(self, wrong=self.wrong + 1)
 
+    def random_question(self):
+        return random.choice(self.remaining_questions)
+
+        
+
 @dataclass
 class Question:
-    state_name: str
+    question: str
     options: "list[str]"
     correct_index: int
 
 
-def random_question():
-    state_name = random.choice(list(state_info.keys()))
-    correct_answer = state_info[state_name]['capital']
 
-    options = random.sample(
-        [state_info[state]['capital'] for state in state_info.keys() if state != state_name],
-        4
-    )
+
+@dataclass 
+class WinScreen:
+    score: Score
+
+    def draw(self, surface):
+        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+
+        if len(self.score.remaining_questions) == 0:
+            draw_text(surface, state_font, "You Win", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2))
+            draw_text(surface, state_font, f"Mistakes: {self.score.wrong}", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2 + 50))
+        else:
+            draw_text(surface, state_font, "You Lose :(", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2))
+            draw_text(surface, state_font, f"Correct: {self.score.correct}", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2 + 50))
+
+        draw_text(surface, scoreboard_font, f"Press Red for HARD MODE, Green for normal, Blue for sports", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2 + 100))
     
-    correct_index = random.randint(0, 5)
-    options = options[:correct_index] + [correct_answer] + options[correct_index:]
+    def next_state(self, input):
+        pressed_buttons = [(i, button) for i, button in enumerate(input.buttons) if button.is_pressed()]
 
-    return Question(
-        state_name=state_name,
-        options=options,
-        correct_index=correct_index,
-    )
+        if len(pressed_buttons) == 0:
+            return self
+        else:
+            next_game = "capitals"
+            if input.buttons[0].is_pressed():
+                next_game = "capitals_hard"
+            if input.buttons[2].is_pressed():
+                next_game = "sports_teams"
 
+            return GetReadyScreen(next_game)
+        
+@dataclass 
+class GetReadyScreen:
+    next_game: str
+
+    def draw(self, surface):
+        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+
+        draw_text(surface, state_font, "Get Ready...", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2))
+       
+    def next_state(self, input):
+        pressed_buttons = [(i, button) for i, button in enumerate(input.buttons) if button.is_pressed()]
+
+        if len(pressed_buttons) == 0:
+            return new_game(self.next_game)
+        else:
+            return self
+
+
+@dataclass 
+class RevealAnswer:
+    question: Question
+    score: Score
+
+    def draw(self, surface):
+        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+
+        draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+        
+
+        answer_height = CANVAS_HEIGHT // 4 * 3
+
+        pygame.draw.rect(surface, (0,0,0), pygame.Rect(((0.5) * (CANVAS_WIDTH//6) - 2, answer_height + 20 - 2), (5*CANVAS_WIDTH//6 + 2, 10 + 4)))
+        for i in range(5):
+            pygame.draw.rect(surface, buttons_in_order[i].rgb.to_tuple(), pygame.Rect((( i+ 0.5) * (CANVAS_WIDTH//6), answer_height + 20), (CANVAS_WIDTH//6, 10)))
+
+        i = self.question.correct_index
+        draw_text(surface, answer_font, self.question.options[i], (CANVAS_WIDTH//6 * (i + 1), answer_height))
+
+        draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
+        draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
+
+
+        
+    def next_state(self, input: Input):
+        pressed_buttons = [(i, button) for i, button in enumerate(input.buttons) if button.is_pressed()]
+
+        if len(pressed_buttons) == 0:
+            # move on
+            if len(self.score.remaining_questions) == 0:
+                return WinScreen(self.score)
+            elif self.score.wrong == DONE:
+                return WinScreen(self.score)
+            else:
+                return AskingQuestionState(
+                    question=self.score.random_question(),
+                    score=self.score
+                )
+        else:
+            return self
+        
 
 @dataclass
 class AskingQuestionState:
@@ -135,9 +216,17 @@ class AskingQuestionState:
     score: Score
 
     def draw(self, surface):
-        draw_text(surface, state_font, self.question.state_name, (CANVAS_WIDTH//6, CANVAS_HEIGHT /3))
+        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+
+        draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+
+        answer_height = CANVAS_HEIGHT // 4 * 3
+
+        pygame.draw.rect(surface, (0,0,0), pygame.Rect(((0.5) * (CANVAS_WIDTH//6) - 2, answer_height + 20 - 2), (5*CANVAS_WIDTH//6 + 2, 10 + 4)))
+
         for i in range(5):
-            draw_text(surface, answer_font, self.question.options[i], (CANVAS_WIDTH//6 * (i + 1), CANVAS_HEIGHT - 40))
+            pygame.draw.rect(surface, buttons_in_order[i].rgb.to_tuple(), pygame.Rect((( i+ 0.5) * (CANVAS_WIDTH//6), answer_height + 20), (CANVAS_WIDTH//6, 10)))
+            draw_text(surface, answer_font, self.question.options[i], (CANVAS_WIDTH//6 * (i + 1), answer_height))
 
         draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
         draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
@@ -152,10 +241,10 @@ class AskingQuestionState:
 
 
         correct = index == self.question.correct_index
-        new_score = self.score.question_answered(correct)
+        new_score = self.score.question_answered(correct, self.question)
 
-        return AskingQuestionState(
-            question=random_question(),
+        return RevealAnswer(
+            question=self.question,
             score=new_score
         )
 
@@ -163,30 +252,6 @@ class AskingQuestionState:
 from typing import Union
 
 
-
-def pick_a_state():
-    # we'll need four random capitals to choose from
-    # plus the correct capital
-    correct_capital = state_info[key]['capital']
-        
-    # now pick 4 random capitals from capital_list
-    rnd_cap = []       # start with an empty list then pick 4
-    while len(rnd_cap) < 4:
-        new_item = random.choice(capital_list)
-        while new_item == correct_capital:        # make sure we didn't pick the correct one
-            new_item = random.choice(capital_list) # try again
-        
-        # Check if the new item is already in the list
-        # so we don't get repeat items
-        if new_item not in rnd_cap:
-            rnd_cap.append(new_item)
-        
-    # we want to add the correct_capital to my random captial list in a random order
-    # Generate a random index between 0 and the length of the list
-    random_index = random.randint(0, len(rnd_cap))
-    # Insert the new item at the random index
-    rnd_cap.insert(random_index, correct_capital)
-    
     
 
 def draw_text(surface, font, text, position, color=(0, 0, 0)):
@@ -195,41 +260,84 @@ def draw_text(surface, font, text, position, color=(0, 0, 0)):
     text_rect = text_surface.get_rect(center=position)
     surface.blit(text_surface, text_rect)
 
-def main():
-    # This program will create a state capital
-    # quiz game to help kids learn the state capitals.
-    # If a state has an NBA team and the player can
-    # name it, they get to play a 3-point shooting game
-    # to earn bonus points
-    # lets use pictures of the states and buttons to select 
-    # capitals
 
+def state_capital_questions(hard_mode):
+    qs = []
+    for state_name in state_info.keys():
+        correct_answer = state_info[state_name]['capital']
 
-   
+        options = random.sample(
+            [state_info[state]['capital'] for state in state_info.keys() if state != state_name],
+            4
+        )
 
-    # set up a dictionary of the state images with 
-    # the state name as the key
+        if hard_mode:
+            options = [c for c in state_info[state_name]["large_cities"] if c != correct_answer]
+            random.shuffle(options)
+        
+        correct_index = random.randint(0, 4)
+        options = options[:correct_index] + [correct_answer] + options[correct_index:]
 
-    
+        qs.append(Question(
+            question=state_name,
+            options=options,
+            correct_index=correct_index,
+        ))
+    return qs
 
-    pygame.init()
+def sports_team_questions():
+    qs = []
+    all_options = list(state_info.keys())
+    for state_name, info in state_info.items():
+        for team in info["sports_teams"]:
+            question = f"Which state is the {team['name']} {team['sport']} team from?"
 
-    screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
+            options = random.sample(
+                [s for s in all_options if s != state_name],
+                4
+            )
+        
+            correct_index = random.randint(0, 4)
+            options = options[:correct_index] + [state_name] + options[correct_index:]
 
+            qs.append(Question(
+                question=question,
+                options=options,
+                correct_index=correct_index,
+            ))
+    return random.sample(qs, 20)
 
-
-
-    state = AskingQuestionState(
-        question=random_question(),
-        score=Score(0,0)
+def new_game(mode:str):
+    qs = []
+    if mode == "capitals":
+        qs = state_capital_questions(False)
+    elif mode == "capitals_hard":
+        qs = state_capital_questions(True)
+    elif mode == "sports_teams":
+        qs = sports_team_questions()
+     
+    score = Score(
+        correct=0,
+        wrong=0, 
+        remaining_questions=qs,
     )
+    state = AskingQuestionState(
+        question=score.random_question(),
+        score=score
+    )
+    return state
+
+def main():
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
+    state = WinScreen(Score(0,0,[]))
 
 
 
     game_over = False
     while not game_over:
-        screen.fill((255, 255, 255))  # RGB for white
-        state = state.next_state(Input(list(buttons.values())))
+        screen.fill((240, 240, 240))  # RGB for white background
+        state = state.next_state(Input(buttons_in_order))
         state.draw(screen)
         pygame.display.flip()  # Update the display
         for event in pygame.event.get():
