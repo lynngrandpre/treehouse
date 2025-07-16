@@ -341,16 +341,13 @@ import csv
 def jeopardy_questions():
     with open("./data/jeopardy_quiz.json", "r") as f:
         jeopardy_data = json.load(f)
-    with open("./data/season39.tsv", "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        season39_data = [row for row in reader]
-    print(season39_data[:10])
+
 
     qs = []
    
-    for q, archive in zip(jeopardy_data, season39_data):
-        category = archive["category"]
-        clue_value = archive["clue_value"]
+    for q in jeopardy_data:
+        category = q["category"]
+        clue_value = q["clue_value"]
         question = f'{category} for {clue_value}: {q["question"]}'
 
         options = random.sample(
