@@ -2,311 +2,274 @@
   {
     "question": "39 of the 55 assembled delegates signed this document in Philadelphia on September 17, 1787",
     "correct_answer": "the Constitution",
-    "wrong_answers": ["the Declaration of Independence", "the Articles of Confederation", "the Bill of Rights", "the Federalist Papers"]
+    "wrong_answers": ["the Declaration of Independence", "the Articles of Confederation", "the Bill of Rights", "the Federalist Papers"],
+    "category": "HERE COMES 39",
+    "clue_value": 200
   },
   {
     "question": "A popular tourist spot, Pier 39 in this California city features many attractions, including the Aquarium of the Bay",
     "correct_answer": "San Francisco",
-    "wrong_answers": ["Los Angeles", "San Diego", "Oakland", "Long Beach"]
+    "wrong_answers": ["Los Angeles", "San Diego", "Oakland", "Sacramento"],
+    "category": "HERE COMES 39",
+    "clue_value": 400
+  },
+  {
+    "question": "In 1972 this team retired catcher Roy Campanella's No. 39 on the same day as it retired his teammate's famous 42",
+    "correct_answer": "Dodgers",
+    "wrong_answers": ["Yankees", "Giants", "Cardinals", "Phillies"],
+    "category": "HERE COMES 39",
+    "clue_value": 600
+  },
+  {
+    "question": "This Opus No. 39 by Edward Elgar has a theme often heard at school graduations",
+    "correct_answer": "\"Pomp And Circumstance\"",
+    "wrong_answers": ["\"Land of Hope and Glory\"", "\"Enigma Variations\"", "\"Nimrod\"", "\"Crown of India\""],
+    "category": "HERE COMES 39",
+    "clue_value": 800
+  },
+  {
+    "question": "In the King James Bible, the Old Testament has 39 books, with Kings, Chronicles & this prophet each having a 1 & 2 book",
+    "correct_answer": "Samuel",
+    "wrong_answers": ["Isaiah", "Jeremiah", "Ezekiel", "Daniel"],
+    "category": "HERE COMES 39",
+    "clue_value": 1000
   },
   {
     "question": "A Hungarian exam",
     "correct_answer": "a Budapest test",
-    "wrong_answers": ["a Prague check", "a Vienna screen", "a Warsaw quest", "a Bucharest rest"]
+    "wrong_answers": ["a Prague quest", "a Warsaw farce", "a Vienna arena", "a Minsk risk"],
+    "category": "WORLD CAPITAL RHYME TIME",
+    "clue_value": 200
   },
   {
     "question": "A Korean parchment curled up for storage",
     "correct_answer": "a Seoul scroll",
-    "wrong_answers": ["a Tokyo roll", "a Beijing string", "a Bangkok pack", "a Manila folder"]
+    "wrong_answers": ["a Tokyo folko", "a Beijing thing", "a Bangkok stock", "a Delhi belly"],
+    "category": "WORLD CAPITAL RHYME TIME",
+    "clue_value": 400
   },
   {
     "question": "A Lebanese matching jacket & trousers",
     "correct_answer": "a Beirut suit",
-    "wrong_answers": ["a Cairo pair", "a Damascus dress", "a Baghdad bag", "a Amman span"]
+    "wrong_answers": ["a Cairo pharaoh", "a Riyadh yard", "a Baghdad dad", "a Tehran plan"],
+    "category": "WORLD CAPITAL RHYME TIME",
+    "clue_value": 600
+  },
+  {
+    "question": "Philippine flavoring from a tropical orchid",
+    "correct_answer": "Manila vanilla",
+    "wrong_answers": ["Jakarta sparta", "Bangkok stock", "Hanoi boy", "Yangon gone"],
+    "category": "WORLD CAPITAL RHYME TIME",
+    "clue_value": 800
+  },
+  {
+    "question": "Sudanese darkness or sadness",
+    "correct_answer": "Khartoum gloom",
+    "wrong_answers": ["Cairo pharaoh", "Tripoli folly", "Tunis moonis", "Rabat combat"],
+    "category": "WORLD CAPITAL RHYME TIME",
+    "clue_value": 1000
   },
   {
     "question": "It can mean a high rate of personnel turnover, or an entryway like the elegant ones at New York City's Plaza Hotel",
     "correct_answer": "a revolving door",
-    "wrong_answers": ["a sliding door", "a swinging door", "a folding door", "a rotating gate"]
+    "wrong_answers": ["a swinging door", "a sliding door", "a folding door", "a double door"],
+    "category": "ALL KINDS OF DOORS",
+    "clue_value": 200
   },
   {
-    "question": "One-name title of Alexandra Ripley's sequel to \"Gone with the Wind\"; Ashley finally proposes, but she says no",
-    "correct_answer": "Scarlett",
-    "wrong_answers": ["Melanie", "Mammy", "Rhett", "Tara"]
+    "question": "The entryway at this London address features a Georgian era glossed-black door with lion's head knocker & a 10",
+    "correct_answer": "10 Downing Street",
+    "wrong_answers": ["Baker Street", "Whitehall", "Parliament Square", "Buckingham Palace"],
+    "category": "ALL KINDS OF DOORS",
+    "clue_value": 400
   },
   {
-    "question": "Change a letter to get this big winner",
-    "correct_answer": "a champ",
-    "wrong_answers": ["a chimp", "a chunk", "a clump", "a cramp"]
+    "question": "The 80-mile-long Door Peninsula separates Wisconsin's Green Bay from the rest of this Great Lake",
+    "correct_answer": "Lake Michigan",
+    "wrong_answers": ["Lake Superior", "Lake Huron", "Lake Erie", "Lake Ontario"],
+    "category": "ALL KINDS OF DOORS",
+    "clue_value": 600
   },
   {
-    "question": "Between 49th & 60th Streets in NYC, you'll find glamorous shops like Cartier on this avenue",
-    "correct_answer": "Fifth Avenue",
-    "wrong_answers": ["Madison Avenue", "Park Avenue", "Lexington Avenue", "Third Avenue"]
+    "question": "This type of spider makes a hinged opening through which the unlucky descend to their doom",
+    "correct_answer": "a trapdoor spider",
+    "wrong_answers": ["a wolf spider", "a funnel-web spider", "a jumping spider", "a crab spider"],
+    "category": "ALL KINDS OF DOORS",
+    "clue_value": 800
+  },
+  {
+    "question": "Initiated in 1899, the Open Door Policy was based on the U.S. & other nations all having equal access to this Asian country",
+    "correct_answer": "China",
+    "wrong_answers": ["Japan", "Korea", "India", "Thailand"],
+    "category": "ALL KINDS OF DOORS",
+    "clue_value": 1000
   },
   {
     "question": "A less serious offense, such as shoplifting, often punished with less than one year in prison",
     "correct_answer": "misdemeanor",
-    "wrong_answers": ["manslaughter", "malpractice", "malfeasance", "misjudgment"]
+    "wrong_answers": ["infringement", "malfeasance", "delinquency", "trespassing"],
+    "category": "11-LETTER WORDS",
+    "clue_value": 400
   },
   {
     "question": "In 1949 Joseph Sobek created this soon-popular game played within 4 walls",
     "correct_answer": "racquetball",
-    "wrong_answers": ["squashboards", "paddleball", "walltennis", "courtgaming"]
+    "wrong_answers": ["handballgame", "squashgaming", "paddleball", "wallballgame"],
+    "category": "11-LETTER WORDS",
+    "clue_value": 800
   },
   {
     "question": "A homeless person may still have a place indoors to sleep; this is the term for someone sleeping on the streets",
     "correct_answer": "unsheltered",
-    "wrong_answers": ["unprotected", "undomiciled", "uninhabited", "unoccupied"]
+    "wrong_answers": ["unprotected", "undomiciled", "unprovided", "uninhabited"],
+    "category": "11-LETTER WORDS",
+    "clue_value": 1600
   },
   {
-    "question": "Around 1860 Dr. W.F. Daniell took cola nuts for intestinal issues, couldn't sleep & discovered that they contain this chemical",
-    "correct_answer": "caffeine",
-    "wrong_answers": ["nicotine", "theobromine", "tannins", "alkaloids"]
+    "question": "The original line of this separating 2 territories was the one dividing the New World between Spain & Portugal",
+    "correct_answer": "demarcation",
+    "wrong_answers": ["borderlines", "designation", "delimitation", "distinction"],
+    "category": "11-LETTER WORDS",
+    "clue_value": 2000
   },
   {
-    "question": "The 3 headline indexes are the Dow Industrials, the S&P 500 & this stock exchange's composite",
-    "correct_answer": "NASDAQ",
-    "wrong_answers": ["NYSE", "AMEX", "Russell", "Wilshire"]
+    "question": "Change a letter to get this big winner",
+    "correct_answer": "a champ",
+    "wrong_answers": ["a chimp", "a chomp", "a clump", "a cramp"],
+    "category": "CHUMP CHANGE",
+    "clue_value": 200
   },
   {
-    "question": "Rushing around in \"From Russia with Love\" & \"The Russia House\"",
-    "correct_answer": "Sir Sean Connery",
-    "wrong_answers": ["Sir Roger Moore", "Sir Michael Caine", "Sir Anthony Hopkins", "Sir Ian McKellen"]
+    "question": "Drop a letter to get this dromedary dome",
+    "correct_answer": "a hump",
+    "wrong_answers": ["a lump", "a bump", "a jump", "a pump"],
+    "category": "CHUMP CHANGE",
+    "clue_value": 400
   },
   {
-    "question": "On the periodic table: nihonium, niobium...",
-    "correct_answer": "nitrogen",
-    "wrong_answers": ["nickel", "neptunium", "nobelium", "neodymium"]
+    "question": "Change 2 letters to get this bell sound",
+    "correct_answer": "a chime",
+    "wrong_answers": ["a crime", "a prime", "a grime", "a slime"],
+    "category": "CHUMP CHANGE",
+    "clue_value": 600
+  },
+  {
+    "question": "Drop 2 letters to get this sports authority",
+    "correct_answer": "an ump",
+    "wrong_answers": ["a ref", "a judge", "a coach", "a boss"],
+    "category": "CHUMP CHANGE",
+    "clue_value": 800
+  },
+  {
+    "question": "Change 2 letters to get this metal fastener",
+    "correct_answer": "a clamp",
+    "wrong_answers": ["a stamp", "a cramp", "a tramp", "a ramp"],
+    "category": "CHUMP CHANGE",
+    "clue_value": 1000
   },
   {
     "question": "This type of energy is sustainable but not yet renewable; it could be if we start getting the uranium from seawater",
     "correct_answer": "nuclear",
-    "wrong_answers": ["thermal", "geothermal", "hydrogen", "biomass"]
+    "wrong_answers": ["geothermal", "hydroelectric", "biomass", "tidal"],
+    "category": "GOING ON A POWER TRIP",
+    "clue_value": 200
+  },
+  {
+    "question": "Let's dig up the fact that in 2021, this fossil fuel provided about 22% of U.S. electricity generation",
+    "correct_answer": "coal",
+    "wrong_answers": ["oil", "gas", "petroleum", "diesel"],
+    "category": "GOING ON A POWER TRIP",
+    "clue_value": 400
+  },
+  {
+    "question": "Power source of the Stanley brothers' 1910 automobiles, per the name",
+    "correct_answer": "steam",
+    "wrong_answers": ["electric", "gasoline", "diesel", "ethanol"],
+    "category": "GOING ON A POWER TRIP",
+    "clue_value": 600
+  },
+  {
+    "question": "The Energy Dept. says of this source, its \"turbines don't produce atmospheric emissions that cause acid rain... or greenhouse gases\"",
+    "correct_answer": "wind",
+    "wrong_answers": ["solar", "hydro", "geothermal", "tidal"],
+    "category": "GOING ON A POWER TRIP",
+    "clue_value": 800
+  },
+  {
+    "question": "This dam with the most generation capacity of any U.S. power plant is about a 2-hour drive from Spokane",
+    "correct_answer": "Grand Coulee Dam",
+    "wrong_answers": ["Hoover Dam", "Glen Canyon Dam", "Bonneville Dam", "Chief Joseph Dam"],
+    "category": "GOING ON A POWER TRIP",
+    "clue_value": 1000
   },
   {
     "question": "This 3-word inquiry was already a catchphrase when Bugs Bunny first asked it in 1940",
     "correct_answer": "What's up, doc?",
-    "wrong_answers": ["How's it going?", "What's the story?", "What's happening here?", "How about that?"]
+    "wrong_answers": ["How's it going?", "What's the story?", "What's happening here?", "How are things?"],
+    "category": "NEW TO THE OED",
+    "clue_value": 200
   },
   {
-    "question": "At first, tragedy visited this family with a soon-to-be famous son on a remote island, not in Godric's Hollow",
-    "correct_answer": "the Potter family",
-    "wrong_answers": ["the Weasley family", "the Longbottom family", "the Black family", "the Malfoy family"]
+    "question": "Ordinal term for a president's husband",
+    "correct_answer": "the first gentleman",
+    "wrong_answers": ["the first spouse", "the first husband", "the first man", "the first consort"],
+    "category": "NEW TO THE OED",
+    "clue_value": 400
   },
   {
-    "question": "It's a synonym for a chest of drawers or a government agency",
-    "correct_answer": "a bureau",
-    "wrong_answers": ["a cabinet", "a department", "a dresser", "a commission"]
+    "question": "Term for an official document certifying one's inoculation status, perhaps for travel",
+    "correct_answer": "vaccine passport",
+    "wrong_answers": ["health certificate", "immunity card", "medical passport", "vaccination record"],
+    "category": "NEW TO THE OED",
+    "clue_value": 600
   },
   {
-    "question": "Worker bees build this structure & storage area in the hive from wax they produce",
-    "correct_answer": "honeycomb",
-    "wrong_answers": ["beehive", "wax cells", "pollen pods", "nectar chambers"]
+    "question": "It's the fiery term for a cheap prepaid mobile device that can be discarded to protect the user's anonymity",
+    "correct_answer": "a burner phone",
+    "wrong_answers": ["a disposable phone", "a throwaway phone", "a temporary phone", "a ghost phone"],
+    "category": "NEW TO THE OED",
+    "clue_value": 800
   },
   {
-    "question": "The Dada art movement began in this most populous Swiss city around 1916",
-    "correct_answer": "Zurich",
-    "wrong_answers": ["Geneva", "Basel", "Bern", "Lausanne"]
-  },
-  {
-    "question": "Prince Philip's titles included Baron Greenwich & Duke of Edinburgh, but not Prince Consort, last used by this royal",
-    "correct_answer": "Prince Albert",
-    "wrong_answers": ["Prince George", "Prince William", "Prince Charles", "Prince Andrew"]
-  },
-  {
-    "question": "Abraham Lincoln: \"A ____ divided against itself cannot stand\"",
-    "correct_answer": "house",
-    "wrong_answers": ["nation", "country", "union", "people"]
-  },
-  {
-    "question": "This traditional 4-letter dog name is from Latin for \"trust\"",
-    "correct_answer": "Fido",
-    "wrong_answers": ["Spot", "Jack", "Duke", "Bear"]
-  },
-  {
-    "question": "The first secretary of this institution stands in front of its famous castle",
-    "correct_answer": "the Smithsonian",
-    "wrong_answers": ["the Library of Congress", "the National Archives", "the Kennedy Center", "the Supreme Court"]
-  },
-  {
-    "question": "Norma Jeane Mortenson, later Baker",
-    "correct_answer": "Marilyn Monroe",
-    "wrong_answers": ["Jayne Mansfield", "Mamie Van Doren", "Lana Turner", "Kim Novak"]
-  },
-  {
-    "question": "This word meaning to acknowledge the truth, perhaps about an election loss, comes from the Latin for \"surrender\"",
-    "correct_answer": "concede",
-    "wrong_answers": ["confess", "confirm", "consent", "conclude"]
+    "question": "\"To stand on\" these, meaning to benefit from the knowledge of great predecessors",
+    "correct_answer": "the shoulders of giants",
+    "wrong_answers": ["the backs of titans", "the foundation of masters", "the wisdom of ages", "the legacy of heroes"],
+    "category": "NEW TO THE OED",
+    "clue_value": 1000
   },
   {
     "question": "This type of diet is modeled on the eating habits of prehistoric man",
     "correct_answer": "paleo",
-    "wrong_answers": ["keto", "atkins", "vegan", "whole"]
+    "wrong_answers": ["keto", "atkins", "whole30", "primal"],
+    "category": "ENDS WITH 2 VOWELS",
+    "clue_value": 400
   },
   {
-    "question": "The semiarid Sahel Region is on the southern edge of this straight-up arid desert of more than 3 million square miles",
-    "correct_answer": "the Sahara Desert",
-    "wrong_answers": ["the Kalahari Desert", "the Namib Desert", "the Libyan Desert", "the Nubian Desert"]
+    "question": "Where TV shows like \"Jeopardy!\" are taped; it's also a one-room apartment",
+    "correct_answer": "a studio",
+    "wrong_answers": ["a loft", "a bedsit", "a flat", "a suite"],
+    "category": "ENDS WITH 2 VOWELS",
+    "clue_value": 800
   },
   {
-    "question": "New mom Sarah Palin once remarked that in the middle of the night she would have to \"put down the BlackBerrys & pick up\" this",
-    "correct_answer": "a breast pump",
-    "wrong_answers": ["a baby bottle", "a diaper bag", "a pacifier", "a burp cloth"]
+    "question": "This word for a type of pet adoptee implies it has been removed from danger",
+    "correct_answer": "a rescue",
+    "wrong_answers": ["a stray", "a foundling", "a shelter pet", "an adoptee"],
+    "category": "ENDS WITH 2 VOWELS",
+    "clue_value": 1200
   },
   {
-    "question": "The action begins in a children's tale when this character blows into London's Cherry Tree Lane on the east wind",
-    "correct_answer": "Mary Poppins",
-    "wrong_answers": ["Nanny McPhee", "Mrs. Doubtfire", "Julie Andrews", "Wendy Darling"]
+    "question": "From the Italian, it's any smooth transition from one topic to another",
+    "correct_answer": "segue",
+    "wrong_answers": ["bridge", "passage", "transition", "interlude"],
+    "category": "ENDS WITH 2 VOWELS",
+    "clue_value": 1600
   },
   {
-    "question": "2 main types of this in a divorce are legal (who makes big decisions about the kid's life) & physical (whom the moppet lives with)",
-    "correct_answer": "custody",
-    "wrong_answers": ["alimony", "support", "visitation", "guardianship"]
-  },
-  {
-    "question": "The year Atlanta's Dragon Con really took off was 2003, when James Marsters, then of this TV show, brought in the crowds",
-    "correct_answer": "Angel (or Buffy)",
-    "wrong_answers": ["Supernatural", "Smallville", "Charmed", "The X-Files"]
-  },
-  {
-    "question": "He said, \"The Seine! I have painted it all my life, at all hours, in all seasons, from Paris to the sea\"",
-    "correct_answer": "(Claude) Monet",
-    "wrong_answers": ["Pierre-Auguste Renoir", "Edgar Degas", "Camille Pissarro", "Paul Cézanne"]
-  },
-  {
-    "question": "John Sack's 1967 book \"M\" follows the soldiers of M company during this war",
-    "correct_answer": "the Vietnam War",
-    "wrong_answers": ["the Korean War", "World War II", "the Gulf War", "the Iraq War"]
-  },
-  {
-    "question": "A website for this annual German event lists stats like visitors: 7.2 million & foiled mug thefts: 111,000",
-    "correct_answer": "Oktoberfest",
-    "wrong_answers": ["Karneval", "Christkindlmärkte", "Maifest", "Weinfest"]
-  },
-  {
-    "question": "\"It's Always ____ in Philadelphia\"",
-    "correct_answer": "Sunny",
-    "wrong_answers": ["Crazy", "Funny", "Busy", "Messy"]
-  },
-  {
-    "question": "From a verb meaning \"to load\", it's the goods aboard a ship",
-    "correct_answer": "cargo",
-    "wrong_answers": ["freight", "payload", "shipment", "merchandise"]
-  },
-  {
-    "question": "The man, the myth, the legend, he cleaned king Augeas' huge stables in a single day, flushing them out by diverting rivers",
-    "correct_answer": "Hercules",
-    "wrong_answers": ["Theseus", "Perseus", "Achilles", "Jason"]
-  },
-  {
-    "question": "James Oglethorpe named Jekyll Island, now one of this state's \"Golden Isles\", for a financial backer of the then-colony",
-    "correct_answer": "Georgia",
-    "wrong_answers": ["South Carolina", "North Carolina", "Florida", "Virginia"]
-  },
-  {
-    "question": "Salmon P. Chase, before George Washington, was the first person on the face of this",
-    "correct_answer": "the dollar",
-    "wrong_answers": ["the quarter", "the penny", "the nickel", "the dime"]
-  },
-  {
-    "question": "In 1946 this project's property & personnel were transferred to to the newly created Atomic Energy Commission",
-    "correct_answer": "Manhattan Project",
-    "wrong_answers": ["Apollo Project", "Human Genome Project", "DARPA Project", "Los Alamos Project"]
-  },
-  {
-    "question": "In other words, to hug",
-    "correct_answer": "to embrace",
-    "wrong_answers": ["to encircle", "to envelop", "to enfold", "to engulf"]
-  },
-  {
-    "question": "Some say this 2-word concept of desire & decision isn't real; experiments show people exposed to that viewpoint behave worse",
-    "correct_answer": "free will",
-    "wrong_answers": ["moral choice", "personal agency", "conscious decision", "rational thought"]
-  },
-  {
-    "question": "His films included \"King Creole\" & \"Girls! Girls! Girls!\"",
-    "correct_answer": "Elvis (Presley)",
-    "wrong_answers": ["Frank Sinatra", "Dean Martin", "Jerry Lee Lewis", "Chuck Berry"]
-  },
-  {
-    "question": "Many in the U.S. from this island celebrate May 20 as its independence day in 1902; the Communist govt. uses a different day",
-    "correct_answer": "Cuba",
-    "wrong_answers": ["Puerto Rico", "Dominican Republic", "Jamaica", "Haiti"]
-  },
-  {
-    "question": "Founded as a technical institute in 1900, its sports teams are the Tartans & its official mascot is a Scottish Terrier",
-    "correct_answer": "Carnegie Mellon",
-    "wrong_answers": ["Georgia Tech", "MIT", "Caltech", "RPI"]
-  },
-  {
-    "question": "In 1774 North Carolina's Penelope Barker led a protest against this British product, making a mulberry version instead",
-    "correct_answer": "tea",
-    "wrong_answers": ["sugar", "coffee", "tobacco", "rum"]
-  },
-  {
-    "question": "Suffering from FOMO? You've got this",
-    "correct_answer": "fear of missing out",
-    "wrong_answers": ["fear of moving on", "fear of making offers", "fear of major obstacles", "fear of multiple options"]
-  },
-  {
-    "question": "Know what the cost is for the ferry from Manhattan to this borough? Nothin'! Bupkis! & it runs 24/7, baby! We love New Yawk!",
-    "correct_answer": "Staten Island",
-    "wrong_answers": ["Brooklyn", "Queens", "The Bronx", "Roosevelt Island"]
-  },
-  {
-    "question": "A red cardigan sweater worn by this beloved TV host is in the Smithsonian",
-    "correct_answer": "Mister Rogers",
-    "wrong_answers": ["Bob Ross", "Mr. Wizard", "Captain Kangaroo", "Big Bird"]
-  },
-  {
-    "question": "March 28, 2022 issues of Time featured 2 different covers: \"The Resilience of\" & \"The Agony of\" this country",
-    "correct_answer": "Ukraine",
-    "wrong_answers": ["Afghanistan", "Syria", "Yemen", "Myanmar"]
-  },
-  {
-    "question": "That Bible's not for the yard sale! It was printed around 1455 by this man & only 48 are known to survive; I think it might be valuable",
-    "correct_answer": "Gutenberg",
-    "wrong_answers": ["Caxton", "Aldus", "Froben", "Plantin"]
-  },
-  {
-    "question": "Mary Margaret Kaye's novel \"The Far Pavilions\" takes place in this country during the time of the Raj",
-    "correct_answer": "India",
-    "wrong_answers": ["Burma", "Ceylon", "Afghanistan", "Pakistan"]
-  },
-  {
-    "question": "Magnetic poles tend to wander, & for hundreds of years, Greenwich positioned magnetic this west of true this",
-    "correct_answer": "north",
-    "wrong_answers": ["south", "east", "west", "center"]
-  },
-  {
-    "question": "For a 1982 film this title school home to \"fast times\" was played by Van Nuys high school & Canoga Park High School",
-    "correct_answer": "Ridgemont High",
-    "wrong_answers": ["Shermer High", "Rydell High", "West Beverly High", "Bayside High"]
-  },
-  {
-    "question": "A 3-part documentary from Ken Burns titled \"The U.S. &\" this dispels the myth that Americans were unaware of Nazi atrocities",
-    "correct_answer": "the Holocaust",
-    "wrong_answers": ["the Cold War", "the Civil War", "the Great Depression", "the Space Race"]
-  },
-  {
-    "question": "On his third voyage in 1778, he reached the Hawaiian Islands & named them the Sandwich Islands, after one of his patrons",
-    "correct_answer": "James Cook",
-    "wrong_answers": ["George Vancouver", "William Bligh", "Francis Drake", "Abel Tasman"]
-  },
-  {
-    "question": "This study of ancient life on Earth deals with dinosaur bones, as well as fossils of plants & even microbes",
-    "correct_answer": "paleontology",
-    "wrong_answers": ["archaeology", "anthropology", "geology", "biology"]
-  },
-  {
-    "question": "\"We Don't Talk About Bruno\" from \"Encanto\" is the first song from an animated Disney film to hit No. 1 since this duet in 1993",
-    "correct_answer": "\"A Whole New World\"",
-    "wrong_answers": ["\"Beauty and the Beast\"", "\"Can You Feel the Love Tonight\"", "\"Colors of the Wind\"", "\"Under the Sea\""]
-  },
-  {
-    "question": "Known for its art & architecture, the Gupta Dynasty ruled much of this 5-letter country from the 4th to 6th century",
-    "correct_answer": "India",
-    "wrong_answers": ["China", "Egypt", "Persia", "Greece"]
+    "question": "There's a \"Q\" inside this synonym for abrupt",
+    "correct_answer": "brusque",
+    "wrong_answers": ["antique", "physique", "boutique", "critique"],
+    "category": "ENDS WITH 2 VOWELS",
+    "clue_value": 2000
   }
 ]
