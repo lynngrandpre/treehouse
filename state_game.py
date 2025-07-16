@@ -9,7 +9,6 @@ import RPi.GPIO as GPIO
 from enum import Enum
 from typing import Union
 
-
 DONE = 5     # number of incorrect guesses to end the game
 
 
