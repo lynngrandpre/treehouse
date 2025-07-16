@@ -7,147 +7,37 @@
   {
     "question": "A popular tourist spot, Pier 39 in this California city features many attractions, including the Aquarium of the Bay",
     "correct_answer": "San Francisco",
-    "wrong_answers": ["Los Angeles", "San Diego", "Oakland", "Santa Monica"]
-  },
-  {
-    "question": "In 1972 this team retired catcher Roy Campanella's No. 39 on the same day as it retired his teammate's famous 42",
-    "correct_answer": "Dodgers",
-    "wrong_answers": ["Yankees", "Giants", "Cardinals", "Phillies"]
-  },
-  {
-    "question": "This Opus No. 39 by Edward Elgar has a theme often heard at school graduations",
-    "correct_answer": "Pomp And Circumstance",
-    "wrong_answers": ["Land of Hope and Glory", "Enigma Variations", "The Dream of Gerontius", "Cockaigne Overture"]
-  },
-  {
-    "question": "In the King James Bible, the Old Testament has 39 books, with Kings, Chronicles & this prophet each having a 1 & 2 book",
-    "correct_answer": "Samuel",
-    "wrong_answers": ["Isaiah", "Jeremiah", "Ezekiel", "Daniel"]
+    "wrong_answers": ["Los Angeles", "San Diego", "Oakland", "Long Beach"]
   },
   {
     "question": "A Hungarian exam",
     "correct_answer": "a Budapest test",
-    "wrong_answers": ["a Magyar quiz", "a Debrecen assessment", "a Szeged evaluation", "a Pécs examination"]
+    "wrong_answers": ["a Prague check", "a Vienna screen", "a Warsaw quest", "a Bucharest rest"]
   },
   {
     "question": "A Korean parchment curled up for storage",
     "correct_answer": "a Seoul scroll",
-    "wrong_answers": ["a Busan bundle", "a Daegu document", "a Incheon inscription", "a Gwangju manuscript"]
+    "wrong_answers": ["a Tokyo roll", "a Beijing string", "a Bangkok pack", "a Manila folder"]
   },
   {
     "question": "A Lebanese matching jacket & trousers",
     "correct_answer": "a Beirut suit",
-    "wrong_answers": ["a Tripoli tuxedo", "a Sidon set", "a Tyre two-piece", "a Baalbek blazer"]
-  },
-  {
-    "question": "Philippine flavoring from a tropical orchid",
-    "correct_answer": "Manila vanilla",
-    "wrong_answers": ["Cebu cinnamon", "Davao nutmeg", "Quezon cardamom", "Iloilo allspice"]
-  },
-  {
-    "question": "Sudanese darkness or sadness",
-    "correct_answer": "Khartoum gloom",
-    "wrong_answers": ["Omdurman melancholy", "Port Sudan sorrow", "Kassala despair", "El Obeid anguish"]
+    "wrong_answers": ["a Cairo pair", "a Damascus dress", "a Baghdad bag", "a Amman span"]
   },
   {
     "question": "It can mean a high rate of personnel turnover, or an entryway like the elegant ones at New York City's Plaza Hotel",
     "correct_answer": "a revolving door",
-    "wrong_answers": ["a sliding door", "a double door", "a French door", "a carriage door"]
-  },
-  {
-    "question": "The entryway at this London address features a Georgian era glossed-black door with lion's head knocker & a 10",
-    "correct_answer": "10 Downing Street",
-    "wrong_answers": ["10 Whitehall", "10 Westminster", "10 Piccadilly", "10 Buckingham Palace"]
-  },
-  {
-    "question": "The 80-mile-long Door Peninsula separates Wisconsin's Green Bay from the rest of this Great Lake",
-    "correct_answer": "Lake Michigan",
-    "wrong_answers": ["Lake Superior", "Lake Huron", "Lake Erie", "Lake Ontario"]
-  },
-  {
-    "question": "This type of spider makes a hinged opening through which the unlucky descend to their doom",
-    "correct_answer": "a trapdoor spider",
-    "wrong_answers": ["a funnel-web spider", "a wolf spider", "a jumping spider", "a orb weaver spider"]
-  },
-  {
-    "question": "Initiated in 1899, the Open Door Policy was based on the U.S. & other nations all having equal access to this Asian country",
-    "correct_answer": "China",
-    "wrong_answers": ["Japan", "Korea", "India", "Philippines"]
+    "wrong_answers": ["a sliding door", "a swinging door", "a folding door", "a rotating gate"]
   },
   {
     "question": "One-name title of Alexandra Ripley's sequel to \"Gone with the Wind\"; Ashley finally proposes, but she says no",
     "correct_answer": "Scarlett",
-    "wrong_answers": ["Rhett", "Melanie", "Tara", "Atlanta"]
-  },
-  {
-    "question": "This novel by Andy Weir about a stranded astronaut was originally self-published",
-    "correct_answer": "The Martian",
-    "wrong_answers": ["Artemis", "Project Hail Mary", "The Moon is a Harsh Mistress", "Red Mars"]
-  },
-  {
-    "question": "\"The Sicilian\" by this author is another set in his universe of the criminal Corleone clan",
-    "correct_answer": "Mario Puzo",
-    "wrong_answers": ["Francis Ford Coppola", "Nicholas Pileggi", "Elmore Leonard", "James Ellroy"]
-  },
-  {
-    "question": "Like the narrator of \"The Little Prince\", the book's author, Antoine de Saint-Exupery, chose this as his profession",
-    "correct_answer": "pilot",
-    "wrong_answers": ["writer", "diplomat", "engineer", "explorer"]
-  },
-  {
-    "question": "This poet wrote \"The Negro Speaks of Rivers\" on the back of an envelope when he was just 17",
-    "correct_answer": "Langston Hughes",
-    "wrong_answers": ["Claude McKay", "Countee Cullen", "Jean Toomer", "Sterling Brown"]
+    "wrong_answers": ["Melanie", "Mammy", "Rhett", "Tara"]
   },
   {
     "question": "Change a letter to get this big winner",
     "correct_answer": "a champ",
-    "wrong_answers": ["a chump", "a chimp", "a chomp", "a clamp"]
-  },
-  {
-    "question": "Drop a letter to get this dromedary dome",
-    "correct_answer": "a hump",
-    "wrong_answers": ["a bump", "a lump", "a jump", "a pump"]
-  },
-  {
-    "question": "Change 2 letters to get this bell sound",
-    "correct_answer": "a chime",
-    "wrong_answers": ["a chine", "a chide", "a chive", "a chile"]
-  },
-  {
-    "question": "Drop 2 letters to get this sports authority",
-    "correct_answer": "an ump",
-    "wrong_answers": ["a ref", "a judge", "a coach", "a line judge"]
-  },
-  {
-    "question": "Change 2 letters to get this metal fastener",
-    "correct_answer": "a clamp",
-    "wrong_answers": ["a clasp", "a crimp", "a cramp", "a stamp"]
-  },
-  {
-    "question": "(Ralph Macchio presents the clue.) But what does \"Cobra Kai\" even mean? Well, \"kai\" is a gathering, so \"Cobra Kai\" is \"an assembly of cobras\"—fierce fighters who meet in this type of room & school to train",
-    "correct_answer": "a dojo",
-    "wrong_answers": ["a gymnasium", "a studio", "a academy", "a training hall"]
-  },
-  {
-    "question": "(Ralph Macchio presents the clue.) Just as Daniel once used this bird kick against Johnny to great effect, Johnny's student Miguel got similar results with it",
-    "correct_answer": "the crane",
-    "wrong_answers": ["the eagle", "the hawk", "the falcon", "the swan"]
-  },
-  {
-    "question": "(Ralph Macchio presents the clue.) Running a car dealership has its perks, especially when you wanna teach this 4-word karate defense; it's great practice for the kids, & your fleet will look fantastic",
-    "correct_answer": "wax on, wax off",
-    "wrong_answers": ["paint the fence", "sand the floor", "catch the fly", "balance the beam"]
-  },
-  {
-    "question": "(Ralph Macchio presents the clue.) Johnny & I may not agree on a lot of things, but we did have a nice moment when we heard & sang \"Take It On The Run\" as we test-drove a car—as I said, \"What kind of man doesn't like this '80s band?\"",
-    "correct_answer": "REO Speedwagon",
-    "wrong_answers": ["Journey", "Foreigner", "Styx", "Kansas"]
-  },
-  {
-    "question": "(Ralph Macchio presents the clue.) We all wish Pat Morita was still with us to do the show; I've often said Pat brought a soulful magic to this \"Karate Kid\" role for which he earned an Oscar nomination",
-    "correct_answer": "Mr. Miyagi",
-    "wrong_answers": ["Sensei Kreese", "Master Li", "Sensei Kim", "Mr. Han"]
+    "wrong_answers": ["a chimp", "a chunk", "a clump", "a cramp"]
   },
   {
     "question": "Between 49th & 60th Streets in NYC, you'll find glamorous shops like Cartier on this avenue",
@@ -155,94 +45,29 @@
     "wrong_answers": ["Madison Avenue", "Park Avenue", "Lexington Avenue", "Third Avenue"]
   },
   {
-    "question": "In a song by Phantom Planet, this 3-digit highway that takes you from L.A. to S.F. sort of rhymes with \"California Here We Come\"",
-    "correct_answer": "the 101",
-    "wrong_answers": ["the 405", "the 110", "the 210", "the 605"]
-  },
-  {
-    "question": "This 2,460-mile interstate stretches coast to coast, passing the Superdome & Tucson's Pima Air & Space Museum",
-    "correct_answer": "I-10 (Interstate 10)",
-    "wrong_answers": ["I-40", "I-80", "I-90", "I-70"]
-  },
-  {
-    "question": "You can see why the club-filled stretch of this Memphis street is called Neon Row",
-    "correct_answer": "Beale Street",
-    "wrong_answers": ["Bourbon Street", "Broadway", "Main Street", "Union Avenue"]
-  },
-  {
     "question": "A less serious offense, such as shoplifting, often punished with less than one year in prison",
     "correct_answer": "misdemeanor",
-    "wrong_answers": ["felony", "infraction", "violation", "petty offense"]
+    "wrong_answers": ["manslaughter", "malpractice", "malfeasance", "misjudgment"]
   },
   {
     "question": "In 1949 Joseph Sobek created this soon-popular game played within 4 walls",
     "correct_answer": "racquetball",
-    "wrong_answers": ["squash", "handball", "paddleball", "wallyball"]
+    "wrong_answers": ["squashboards", "paddleball", "walltennis", "courtgaming"]
   },
   {
     "question": "A homeless person may still have a place indoors to sleep; this is the term for someone sleeping on the streets",
     "correct_answer": "unsheltered",
-    "wrong_answers": ["displaced", "transient", "vagrant", "itinerant"]
-  },
-  {
-    "question": "The original line of this separating 2 territories was the one dividing the New World between Spain & Portugal",
-    "correct_answer": "demarcation",
-    "wrong_answers": ["boundary", "frontier", "partition", "border"]
+    "wrong_answers": ["unprotected", "undomiciled", "uninhabited", "unoccupied"]
   },
   {
     "question": "Around 1860 Dr. W.F. Daniell took cola nuts for intestinal issues, couldn't sleep & discovered that they contain this chemical",
     "correct_answer": "caffeine",
-    "wrong_answers": ["theobromine", "nicotine", "tannin", "quinine"]
-  },
-  {
-    "question": "4 of these were discovered by 1807; astronomers sulked that they weren't full planets but got over it when Astraea was found in 1845",
-    "correct_answer": "asteroids",
-    "wrong_answers": ["moons", "comets", "meteoroids", "planetoids"]
-  },
-  {
-    "question": "Work at Rice University led to the discovery of buckyballs, named for resembling this Buckminster Fuller creation",
-    "correct_answer": "a geodesic dome",
-    "wrong_answers": ["a tensegrity structure", "a space frame", "a lattice tower", "a suspension bridge"]
-  },
-  {
-    "question": "Discovered around 1980, these nasty proteins (hence the \"pr\" in the word) are a cause of fatal brain diseases",
-    "correct_answer": "prions",
-    "wrong_answers": ["virions", "toxins", "pathogens", "antigens"]
-  },
-  {
-    "question": "Normally a dozy institution, this 105-member upper house of parliament was news in 2012 with a housing expenses scandal",
-    "correct_answer": "the Senate",
-    "wrong_answers": ["the House of Commons", "the House of Lords", "the Parliament", "the Assembly"]
-  },
-  {
-    "question": "In 1880 the Arctic Islands became part of these territories between the Yukon & Nunavut",
-    "correct_answer": "the Northwest Territories",
-    "wrong_answers": ["the Yukon Territory", "Nunavut", "the Arctic Territory", "the Northern Territory"]
-  },
-  {
-    "question": "Founded by a royal charter, the company named for this body of water employed \"voyageurs\" who explored Canada by canoe",
-    "correct_answer": "Hudson Bay",
-    "wrong_answers": ["James Bay", "Baffin Bay", "Georgian Bay", "Ungava Bay"]
-  },
-  {
-    "question": "Asked to yield this city to the English in 1690, Count Frontenac said, \"My only reply will be from the mouths of my cannons\"",
-    "correct_answer": "Quebec City",
-    "wrong_answers": ["Montreal", "Toronto", "Halifax", "Ottawa"]
-  },
-  {
-    "question": "A World Heritage Site, these Newfoundland meadows contain the first evidence of Europeans in the New World",
-    "correct_answer": "L'Anse aux Meadows",
-    "wrong_answers": ["Trinity Bay", "Conception Bay", "Avalon Peninsula", "Gros Morne"]
+    "wrong_answers": ["nicotine", "theobromine", "tannins", "alkaloids"]
   },
   {
     "question": "The 3 headline indexes are the Dow Industrials, the S&P 500 & this stock exchange's composite",
     "correct_answer": "NASDAQ",
-    "wrong_answers": ["NYSE", "Russell", "AMEX", "Wilshire"]
-  },
-  {
-    "question": "In 2017 Oregon became the first state with automatic these savings accounts: employees are enrolled unless they opt out",
-    "correct_answer": "IRAs",
-    "wrong_answers": ["401(k)s", "Roth IRAs", "pensions", "annuities"]
+    "wrong_answers": ["NYSE", "AMEX", "Russell", "Wilshire"]
   },
   {
     "question": "Rushing around in \"From Russia with Love\" & \"The Russia House\"",
@@ -250,23 +75,238 @@
     "wrong_answers": ["Sir Roger Moore", "Sir Michael Caine", "Sir Anthony Hopkins", "Sir Ian McKellen"]
   },
   {
-    "question": "Gus in \"Cats\" & also giving a magnetic performance in \"X-Men\"",
-    "correct_answer": "Ian McKellen",
-    "wrong_answers": ["Patrick Stewart", "Hugh Jackman", "James McAvoy", "Michael Fassbender"]
+    "question": "On the periodic table: nihonium, niobium...",
+    "correct_answer": "nitrogen",
+    "wrong_answers": ["nickel", "neptunium", "nobelium", "neodymium"]
   },
   {
-    "question": "The maitre d' at L'Idiot in \"L.A. Story\" & also giving a thoughtful performance in \"X-Men\"",
-    "correct_answer": "Patrick Stewart",
-    "wrong_answers": ["Ian McKellen", "Hugh Jackman", "James McAvoy", "Michael Fassbender"]
+    "question": "This type of energy is sustainable but not yet renewable; it could be if we start getting the uranium from seawater",
+    "correct_answer": "nuclear",
+    "wrong_answers": ["thermal", "geothermal", "hydrogen", "biomass"]
   },
   {
-    "question": "Ruling in \"The Cider House Rules\" & (What's it all about?) \"Alfie\"",
-    "correct_answer": "Sir Michael Caine",
-    "wrong_answers": ["Sir Sean Connery", "Sir Anthony Hopkins", "Sir Ian McKellen", "Sir Ben Kingsley"]
+    "question": "This 3-word inquiry was already a catchphrase when Bugs Bunny first asked it in 1940",
+    "correct_answer": "What's up, doc?",
+    "wrong_answers": ["How's it going?", "What's the story?", "What's happening here?", "How about that?"]
   },
   {
-    "question": "\"Murder by Death\" & \"Star Wars\", one year apart",
-    "correct_answer": "Sir Alec Guinness",
-    "wrong_answers": ["Sir Sean Connery", "Sir Anthony Hopkins", "Sir Ian McKellen", "Sir Peter O'Toole"]
+    "question": "At first, tragedy visited this family with a soon-to-be famous son on a remote island, not in Godric's Hollow",
+    "correct_answer": "the Potter family",
+    "wrong_answers": ["the Weasley family", "the Longbottom family", "the Black family", "the Malfoy family"]
+  },
+  {
+    "question": "It's a synonym for a chest of drawers or a government agency",
+    "correct_answer": "a bureau",
+    "wrong_answers": ["a cabinet", "a department", "a dresser", "a commission"]
+  },
+  {
+    "question": "Worker bees build this structure & storage area in the hive from wax they produce",
+    "correct_answer": "honeycomb",
+    "wrong_answers": ["beehive", "wax cells", "pollen pods", "nectar chambers"]
+  },
+  {
+    "question": "The Dada art movement began in this most populous Swiss city around 1916",
+    "correct_answer": "Zurich",
+    "wrong_answers": ["Geneva", "Basel", "Bern", "Lausanne"]
+  },
+  {
+    "question": "Prince Philip's titles included Baron Greenwich & Duke of Edinburgh, but not Prince Consort, last used by this royal",
+    "correct_answer": "Prince Albert",
+    "wrong_answers": ["Prince George", "Prince William", "Prince Charles", "Prince Andrew"]
+  },
+  {
+    "question": "Abraham Lincoln: \"A ____ divided against itself cannot stand\"",
+    "correct_answer": "house",
+    "wrong_answers": ["nation", "country", "union", "people"]
+  },
+  {
+    "question": "This traditional 4-letter dog name is from Latin for \"trust\"",
+    "correct_answer": "Fido",
+    "wrong_answers": ["Spot", "Jack", "Duke", "Bear"]
+  },
+  {
+    "question": "The first secretary of this institution stands in front of its famous castle",
+    "correct_answer": "the Smithsonian",
+    "wrong_answers": ["the Library of Congress", "the National Archives", "the Kennedy Center", "the Supreme Court"]
+  },
+  {
+    "question": "Norma Jeane Mortenson, later Baker",
+    "correct_answer": "Marilyn Monroe",
+    "wrong_answers": ["Jayne Mansfield", "Mamie Van Doren", "Lana Turner", "Kim Novak"]
+  },
+  {
+    "question": "This word meaning to acknowledge the truth, perhaps about an election loss, comes from the Latin for \"surrender\"",
+    "correct_answer": "concede",
+    "wrong_answers": ["confess", "confirm", "consent", "conclude"]
+  },
+  {
+    "question": "This type of diet is modeled on the eating habits of prehistoric man",
+    "correct_answer": "paleo",
+    "wrong_answers": ["keto", "atkins", "vegan", "whole"]
+  },
+  {
+    "question": "The semiarid Sahel Region is on the southern edge of this straight-up arid desert of more than 3 million square miles",
+    "correct_answer": "the Sahara Desert",
+    "wrong_answers": ["the Kalahari Desert", "the Namib Desert", "the Libyan Desert", "the Nubian Desert"]
+  },
+  {
+    "question": "New mom Sarah Palin once remarked that in the middle of the night she would have to \"put down the BlackBerrys & pick up\" this",
+    "correct_answer": "a breast pump",
+    "wrong_answers": ["a baby bottle", "a diaper bag", "a pacifier", "a burp cloth"]
+  },
+  {
+    "question": "The action begins in a children's tale when this character blows into London's Cherry Tree Lane on the east wind",
+    "correct_answer": "Mary Poppins",
+    "wrong_answers": ["Nanny McPhee", "Mrs. Doubtfire", "Julie Andrews", "Wendy Darling"]
+  },
+  {
+    "question": "2 main types of this in a divorce are legal (who makes big decisions about the kid's life) & physical (whom the moppet lives with)",
+    "correct_answer": "custody",
+    "wrong_answers": ["alimony", "support", "visitation", "guardianship"]
+  },
+  {
+    "question": "The year Atlanta's Dragon Con really took off was 2003, when James Marsters, then of this TV show, brought in the crowds",
+    "correct_answer": "Angel (or Buffy)",
+    "wrong_answers": ["Supernatural", "Smallville", "Charmed", "The X-Files"]
+  },
+  {
+    "question": "He said, \"The Seine! I have painted it all my life, at all hours, in all seasons, from Paris to the sea\"",
+    "correct_answer": "(Claude) Monet",
+    "wrong_answers": ["Pierre-Auguste Renoir", "Edgar Degas", "Camille Pissarro", "Paul Cézanne"]
+  },
+  {
+    "question": "John Sack's 1967 book \"M\" follows the soldiers of M company during this war",
+    "correct_answer": "the Vietnam War",
+    "wrong_answers": ["the Korean War", "World War II", "the Gulf War", "the Iraq War"]
+  },
+  {
+    "question": "A website for this annual German event lists stats like visitors: 7.2 million & foiled mug thefts: 111,000",
+    "correct_answer": "Oktoberfest",
+    "wrong_answers": ["Karneval", "Christkindlmärkte", "Maifest", "Weinfest"]
+  },
+  {
+    "question": "\"It's Always ____ in Philadelphia\"",
+    "correct_answer": "Sunny",
+    "wrong_answers": ["Crazy", "Funny", "Busy", "Messy"]
+  },
+  {
+    "question": "From a verb meaning \"to load\", it's the goods aboard a ship",
+    "correct_answer": "cargo",
+    "wrong_answers": ["freight", "payload", "shipment", "merchandise"]
+  },
+  {
+    "question": "The man, the myth, the legend, he cleaned king Augeas' huge stables in a single day, flushing them out by diverting rivers",
+    "correct_answer": "Hercules",
+    "wrong_answers": ["Theseus", "Perseus", "Achilles", "Jason"]
+  },
+  {
+    "question": "James Oglethorpe named Jekyll Island, now one of this state's \"Golden Isles\", for a financial backer of the then-colony",
+    "correct_answer": "Georgia",
+    "wrong_answers": ["South Carolina", "North Carolina", "Florida", "Virginia"]
+  },
+  {
+    "question": "Salmon P. Chase, before George Washington, was the first person on the face of this",
+    "correct_answer": "the dollar",
+    "wrong_answers": ["the quarter", "the penny", "the nickel", "the dime"]
+  },
+  {
+    "question": "In 1946 this project's property & personnel were transferred to to the newly created Atomic Energy Commission",
+    "correct_answer": "Manhattan Project",
+    "wrong_answers": ["Apollo Project", "Human Genome Project", "DARPA Project", "Los Alamos Project"]
+  },
+  {
+    "question": "In other words, to hug",
+    "correct_answer": "to embrace",
+    "wrong_answers": ["to encircle", "to envelop", "to enfold", "to engulf"]
+  },
+  {
+    "question": "Some say this 2-word concept of desire & decision isn't real; experiments show people exposed to that viewpoint behave worse",
+    "correct_answer": "free will",
+    "wrong_answers": ["moral choice", "personal agency", "conscious decision", "rational thought"]
+  },
+  {
+    "question": "His films included \"King Creole\" & \"Girls! Girls! Girls!\"",
+    "correct_answer": "Elvis (Presley)",
+    "wrong_answers": ["Frank Sinatra", "Dean Martin", "Jerry Lee Lewis", "Chuck Berry"]
+  },
+  {
+    "question": "Many in the U.S. from this island celebrate May 20 as its independence day in 1902; the Communist govt. uses a different day",
+    "correct_answer": "Cuba",
+    "wrong_answers": ["Puerto Rico", "Dominican Republic", "Jamaica", "Haiti"]
+  },
+  {
+    "question": "Founded as a technical institute in 1900, its sports teams are the Tartans & its official mascot is a Scottish Terrier",
+    "correct_answer": "Carnegie Mellon",
+    "wrong_answers": ["Georgia Tech", "MIT", "Caltech", "RPI"]
+  },
+  {
+    "question": "In 1774 North Carolina's Penelope Barker led a protest against this British product, making a mulberry version instead",
+    "correct_answer": "tea",
+    "wrong_answers": ["sugar", "coffee", "tobacco", "rum"]
+  },
+  {
+    "question": "Suffering from FOMO? You've got this",
+    "correct_answer": "fear of missing out",
+    "wrong_answers": ["fear of moving on", "fear of making offers", "fear of major obstacles", "fear of multiple options"]
+  },
+  {
+    "question": "Know what the cost is for the ferry from Manhattan to this borough? Nothin'! Bupkis! & it runs 24/7, baby! We love New Yawk!",
+    "correct_answer": "Staten Island",
+    "wrong_answers": ["Brooklyn", "Queens", "The Bronx", "Roosevelt Island"]
+  },
+  {
+    "question": "A red cardigan sweater worn by this beloved TV host is in the Smithsonian",
+    "correct_answer": "Mister Rogers",
+    "wrong_answers": ["Bob Ross", "Mr. Wizard", "Captain Kangaroo", "Big Bird"]
+  },
+  {
+    "question": "March 28, 2022 issues of Time featured 2 different covers: \"The Resilience of\" & \"The Agony of\" this country",
+    "correct_answer": "Ukraine",
+    "wrong_answers": ["Afghanistan", "Syria", "Yemen", "Myanmar"]
+  },
+  {
+    "question": "That Bible's not for the yard sale! It was printed around 1455 by this man & only 48 are known to survive; I think it might be valuable",
+    "correct_answer": "Gutenberg",
+    "wrong_answers": ["Caxton", "Aldus", "Froben", "Plantin"]
+  },
+  {
+    "question": "Mary Margaret Kaye's novel \"The Far Pavilions\" takes place in this country during the time of the Raj",
+    "correct_answer": "India",
+    "wrong_answers": ["Burma", "Ceylon", "Afghanistan", "Pakistan"]
+  },
+  {
+    "question": "Magnetic poles tend to wander, & for hundreds of years, Greenwich positioned magnetic this west of true this",
+    "correct_answer": "north",
+    "wrong_answers": ["south", "east", "west", "center"]
+  },
+  {
+    "question": "For a 1982 film this title school home to \"fast times\" was played by Van Nuys high school & Canoga Park High School",
+    "correct_answer": "Ridgemont High",
+    "wrong_answers": ["Shermer High", "Rydell High", "West Beverly High", "Bayside High"]
+  },
+  {
+    "question": "A 3-part documentary from Ken Burns titled \"The U.S. &\" this dispels the myth that Americans were unaware of Nazi atrocities",
+    "correct_answer": "the Holocaust",
+    "wrong_answers": ["the Cold War", "the Civil War", "the Great Depression", "the Space Race"]
+  },
+  {
+    "question": "On his third voyage in 1778, he reached the Hawaiian Islands & named them the Sandwich Islands, after one of his patrons",
+    "correct_answer": "James Cook",
+    "wrong_answers": ["George Vancouver", "William Bligh", "Francis Drake", "Abel Tasman"]
+  },
+  {
+    "question": "This study of ancient life on Earth deals with dinosaur bones, as well as fossils of plants & even microbes",
+    "correct_answer": "paleontology",
+    "wrong_answers": ["archaeology", "anthropology", "geology", "biology"]
+  },
+  {
+    "question": "\"We Don't Talk About Bruno\" from \"Encanto\" is the first song from an animated Disney film to hit No. 1 since this duet in 1993",
+    "correct_answer": "\"A Whole New World\"",
+    "wrong_answers": ["\"Beauty and the Beast\"", "\"Can You Feel the Love Tonight\"", "\"Colors of the Wind\"", "\"Under the Sea\""]
+  },
+  {
+    "question": "Known for its art & architecture, the Gupta Dynasty ruled much of this 5-letter country from the 4th to 6th century",
+    "correct_answer": "India",
+    "wrong_answers": ["China", "Egypt", "Persia", "Greece"]
   }
 ]
