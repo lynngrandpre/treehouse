@@ -19,7 +19,7 @@ pygame.mouse.set_visible(False) # Hide cursor here
 state_font = pygame.font.SysFont("", 60)
 answer_font = pygame.font.SysFont("", 25)
 scoreboard_font = pygame.font.SysFont("", 30)
-q_font_small = pygame.font.SysFont("", 30)
+q_font_small = pygame.font.SysFont("", 35)
 
 
 
@@ -216,6 +216,23 @@ class GetReadyScreen:
             return self
 
 
+def draw_question(surface, question):
+    CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+
+    if len(question) < 40:
+        draw_text(surface, state_font, question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+    else:
+        halfway = len(question) // 2
+        # Find the first space after halfway
+        cutoff = question.find(' ', halfway)
+        if cutoff == -1:
+            cutoff = halfway  # fallback if no space found
+        start = question[:cutoff]
+        end = question[cutoff:].lstrip()
+
+        draw_text(surface, q_font_small, start, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+        draw_text(surface, q_font_small, end, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2 + 40))
+
 @dataclass 
 class RevealAnswer:
     question: Question
@@ -224,7 +241,8 @@ class RevealAnswer:
     def draw(self, surface):
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
-        draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+        draw_question(surface, self.question.question)
+
         self.question.answer_picker(True).draw(surface)
 
 
@@ -260,19 +278,7 @@ class AskingQuestionState:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
         
-        if len(self.question.question) < 40:
-            draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
-        else:
-            halfway = len(self.question.question) // 2
-            # Find the first space after halfway
-            cutoff = self.question.question.find(' ', halfway)
-            if cutoff == -1:
-                cutoff = halfway  # fallback if no space found
-            start = self.question.question[:cutoff]
-            end = self.question.question[cutoff:].lstrip()
-
-            draw_text(surface, q_font_small, start, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
-            draw_text(surface, q_font_small, end, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2 + 40))
+        draw_question(surface, self.question.question)
 
 
         self.question.answer_picker(False).draw(surface)
@@ -329,15 +335,23 @@ def state_capital_questions(hard_mode):
     return qs
 
 import json
+import csv
+
 
 def jeopardy_questions():
     with open("./data/jeopardy_quiz.json", "r") as f:
         jeopardy_data = json.load(f)
+    with open("./data/season39.tsv", "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        season39_data = [row for row in reader]
+    print(season39_data[:10])
 
     qs = []
    
-    for q in jeopardy_data:
-        question = q["question"]
+    for q, archive in zip(jeopardy_data, season39_data):
+        category = archive["category"]
+        clue_value = archive["clue_value"]
+        question = f'{category} for {clue_value}: {q["question"]}'
 
         options = random.sample(
             q["wrong_answers"],
