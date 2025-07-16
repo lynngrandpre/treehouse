@@ -7,8 +7,10 @@ from state_info import state_info
 import RPi.GPIO as GPIO
 
 from enum import Enum
+from typing import Union
 
-DONE             = 5     # number of incorrect guesses to end the game
+
+DONE = 5     # number of incorrect guesses to end the game
 
 
 
@@ -110,18 +112,69 @@ class Score:
 
         
 
+
+
+@dataclass
+class AnswerPicker():
+    options: "list[str]"
+    values: "list[str|bool]"
+
+    def __post_init__(self):
+        if len(self.options) > 5:
+            raise ValueError(f"AnswerPicker: options must have at most 5 items. {self.options}")
+        if len(self.values) != len(self.options):
+            raise ValueError(f"AnswerPicker: values must have the same length as options. {len(self.values)=} {len(self.options)=}")
+
+    def draw(self, surface):
+        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+
+        answer_height = CANVAS_HEIGHT // 4 * 3
+
+        pygame.draw.rect(surface, (0,0,0), pygame.Rect(((0.5) * (CANVAS_WIDTH//6) - 2, answer_height + 20 - 2), (5*CANVAS_WIDTH//6 + 2, 10 + 4)))
+
+        for i in range(len(self.options)):
+            pygame.draw.rect(surface, buttons_in_order[i].rgb.to_tuple(), pygame.Rect((( i+ 0.5) * (CANVAS_WIDTH//6), answer_height + 20), (CANVAS_WIDTH//6, 10)))
+            draw_text(surface, answer_font, self.options[i], (CANVAS_WIDTH//6 * (i + 1), answer_height))
+
+    def selection(self, input):
+        pressed_buttons = [i for i, button in enumerate(input.buttons) if button.is_pressed()]
+
+        if len(pressed_buttons) != 1:
+            return None
+        
+        idx = pressed_buttons[0]
+        if idx >= len(self.values):
+            return None
+        
+        return self.values[idx]
+
+
 @dataclass
 class Question:
     question: str
     options: "list[str]"
     correct_index: int
 
+    def answer_picker(self, reveal_answer: bool):
+        options = self.options
+        if reveal_answer:
+            options = ["" if i != self.correct_index else o for i, o in enumerate(self.options)]
 
+        return AnswerPicker(
+            options,
+            [i == self.correct_index for i in range(len(self.options))]
+        )
 
 
 @dataclass 
 class WinScreen:
     score: Score
+
+    def options_picker(self):
+        return AnswerPicker(
+            ["Capitals HARD", "Capitals", "Sports"],
+            ["capitals_hard", "capitals", "sports"]
+        )
 
     def draw(self, surface):
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
@@ -133,21 +186,16 @@ class WinScreen:
             draw_text(surface, state_font, "You Lose :(", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2))
             draw_text(surface, state_font, f"Correct: {self.score.correct}", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2 + 50))
 
-        draw_text(surface, scoreboard_font, f"Press Red for HARD MODE, Green for normal, Blue for sports", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2 + 100))
+        
+        self.options_picker().draw(surface)
+        # draw_text(surface, scoreboard_font, f"Press Red for HARD MODE, Green for normal, Blue for sports", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2 + 100))
     
     def next_state(self, input):
-        pressed_buttons = [(i, button) for i, button in enumerate(input.buttons) if button.is_pressed()]
-
-        if len(pressed_buttons) == 0:
-            return self
+        selection = self.options_picker().selection(input)
+        if selection is not None:
+            return GetReadyScreen(selection)
         else:
-            next_game = "capitals"
-            if input.buttons[0].is_pressed():
-                next_game = "capitals_hard"
-            if input.buttons[2].is_pressed():
-                next_game = "sports_teams"
-
-            return GetReadyScreen(next_game)
+            return self
         
 @dataclass 
 class GetReadyScreen:
@@ -176,16 +224,8 @@ class RevealAnswer:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
         draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
-        
+        self.question.answer_picker(True).draw(surface)
 
-        answer_height = CANVAS_HEIGHT // 4 * 3
-
-        pygame.draw.rect(surface, (0,0,0), pygame.Rect(((0.5) * (CANVAS_WIDTH//6) - 2, answer_height + 20 - 2), (5*CANVAS_WIDTH//6 + 2, 10 + 4)))
-        for i in range(5):
-            pygame.draw.rect(surface, buttons_in_order[i].rgb.to_tuple(), pygame.Rect((( i+ 0.5) * (CANVAS_WIDTH//6), answer_height + 20), (CANVAS_WIDTH//6, 10)))
-
-        i = self.question.correct_index
-        draw_text(surface, answer_font, self.question.options[i], (CANVAS_WIDTH//6 * (i + 1), answer_height))
 
         draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
         draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
@@ -220,27 +260,18 @@ class AskingQuestionState:
 
         draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
 
-        answer_height = CANVAS_HEIGHT // 4 * 3
+        self.question.answer_picker(False).draw(surface)
 
-        pygame.draw.rect(surface, (0,0,0), pygame.Rect(((0.5) * (CANVAS_WIDTH//6) - 2, answer_height + 20 - 2), (5*CANVAS_WIDTH//6 + 2, 10 + 4)))
-
-        for i in range(5):
-            pygame.draw.rect(surface, buttons_in_order[i].rgb.to_tuple(), pygame.Rect((( i+ 0.5) * (CANVAS_WIDTH//6), answer_height + 20), (CANVAS_WIDTH//6, 10)))
-            draw_text(surface, answer_font, self.question.options[i], (CANVAS_WIDTH//6 * (i + 1), answer_height))
 
         draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
         draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
 
 
     def next_state(self, input: Input):
-        pressed_buttons = [(i, button) for i, button in enumerate(input.buttons) if button.is_pressed()]
-
-        if len(pressed_buttons) != 1:
+        correct = self.question.answer_picker(False).selection(input)
+        if correct is None:
             return self
-        index, _button = pressed_buttons[0]
 
-
-        correct = index == self.question.correct_index
         new_score = self.score.question_answered(correct, self.question)
 
         return RevealAnswer(
@@ -248,8 +279,6 @@ class AskingQuestionState:
             score=new_score
         )
 
-
-from typing import Union
 
 
     
@@ -272,8 +301,7 @@ def state_capital_questions(hard_mode):
         )
 
         if hard_mode:
-            options = [c for c in state_info[state_name]["large_cities"] if c != correct_answer]
-            random.shuffle(options)
+            options = random.sample([c for c in state_info[state_name]["large_cities"] if c != correct_answer],4)
         
         correct_index = random.randint(0, 4)
         options = options[:correct_index] + [correct_answer] + options[correct_index:]
@@ -313,7 +341,7 @@ def new_game(mode:str):
         qs = state_capital_questions(False)
     elif mode == "capitals_hard":
         qs = state_capital_questions(True)
-    elif mode == "sports_teams":
+    elif mode == "sports":
         qs = sports_team_questions()
      
     score = Score(
