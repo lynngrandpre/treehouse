@@ -19,6 +19,8 @@ pygame.mouse.set_visible(False) # Hide cursor here
 state_font = pygame.font.SysFont("", 60)
 answer_font = pygame.font.SysFont("", 25)
 scoreboard_font = pygame.font.SysFont("", 30)
+q_font_small = pygame.font.SysFont("", 30)
+
 
 
 class Color(Enum):
@@ -171,8 +173,8 @@ class WinScreen:
 
     def options_picker(self):
         return AnswerPicker(
-            ["Capitals HARD", "Capitals", "Sports"],
-            ["capitals_hard", "capitals", "sports"]
+            ["Capitals HARD", "Capitals", "Sports", "Jeopardy!"],
+            ["capitals_hard", "capitals", "sports", "jeopardy"]
         )
 
     def draw(self, surface):
@@ -257,7 +259,21 @@ class AskingQuestionState:
     def draw(self, surface):
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
-        draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+        
+        if len(self.question.question) < 40:
+            draw_text(surface, state_font, self.question.question, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+        else:
+            halfway = len(self.question.question) // 2
+            # Find the first space after halfway
+            cutoff = self.question.question.find(' ', halfway)
+            if cutoff == -1:
+                cutoff = halfway  # fallback if no space found
+            start = self.question.question[:cutoff]
+            end = self.question.question[cutoff:].lstrip()
+
+            draw_text(surface, q_font_small, start, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2))
+            draw_text(surface, q_font_small, end, (CANVAS_WIDTH//2, CANVAS_HEIGHT /2 + 40))
+
 
         self.question.answer_picker(False).draw(surface)
 
@@ -312,6 +328,32 @@ def state_capital_questions(hard_mode):
         ))
     return qs
 
+import json
+
+def jeopardy_questions():
+    with open("./data/jeopardy_quiz.json", "r") as f:
+        jeopardy_data = json.load(f)
+
+    qs = []
+   
+    for q in jeopardy_data:
+        question = q["question"]
+
+        options = random.sample(
+            q["wrong_answers"],
+            4
+        )
+        
+        correct_index = random.randint(0, 4)
+        options = options[:correct_index] + [q["correct_answer"]] + options[correct_index:]
+
+        qs.append(Question(
+            question=question,
+            options=options,
+            correct_index=correct_index,
+        ))
+    return random.sample(qs, 20)
+
 def sports_team_questions():
     qs = []
     all_options = list(state_info.keys())
@@ -342,6 +384,8 @@ def new_game(mode:str):
         qs = state_capital_questions(True)
     elif mode == "sports":
         qs = sports_team_questions()
+    elif mode == "jeopardy":
+        qs = jeopardy_questions()
      
     score = Score(
         correct=0,
