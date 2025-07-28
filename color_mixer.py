@@ -1,3 +1,11 @@
+# Color Mixer Game
+# 
+# Usage: python color_mixer.py max_num_buttons
+# max_num_buttons: maximum number of colors to mix
+#
+# Game chooses several colors to mix together in a dot on the screen.
+# Hold down the buttons corresponding to the colors to guess the color mix
+
 import pygame
 
 pygame.init()
