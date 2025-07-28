@@ -1,6 +1,7 @@
 import pygame
 import random
 from dataclasses import dataclass, replace
+from math import cos, sin, pi # Added for color_mixer animation
 
 from state_info import state_info
 
@@ -90,6 +91,7 @@ for button in buttons.values():
 @dataclass
 class Input:
     buttons: "list[Button]"
+    current_time: int # Added current_time to Input
 
 
 @dataclass
@@ -112,7 +114,6 @@ class Score:
         return random.choice(self.remaining_questions)
 
         
-
 
 
 @dataclass
@@ -172,9 +173,10 @@ class WinScreen:
     score: Score
 
     def options_picker(self):
+        # Added "Color Mixer" as a new option
         return AnswerPicker(
-            ["Capitals HARD", "Capitals", "Sports", "Jeopardy!"],
-            ["capitals_hard", "capitals", "sports", "jeopardy"]
+            ["Capitals HARD", "Capitals", "Sports", "Jeopardy!", "Color Mixer"],
+            ["capitals_hard", "capitals", "sports", "jeopardy", "color_mixer"]
         )
 
     def draw(self, surface):
@@ -189,7 +191,6 @@ class WinScreen:
 
         
         self.options_picker().draw(surface)
-        # draw_text(surface, scoreboard_font, f"Press Red for HARD MODE, Green for normal, Blue for sports", (CANVAS_WIDTH//2, CANVAS_HEIGHT//2 + 100))
     
     def next_state(self, input):
         selection = self.options_picker().selection(input)
@@ -387,6 +388,135 @@ def sports_team_questions():
             ))
     return random.sample(qs, 20)
 
+# --- Color Mixer Game Logic Integration ---
+
+# Helper functions for color mixer
+def average(rgbs):
+    current_color = RGB(0,0,0)
+    if len(rgbs) == 0:
+        return current_color
+
+    for rgb in rgbs:
+        current_color += rgb
+
+    return current_color / len(rgbs)
+
+# Fixed max_num_buttons for the integrated game
+COLOR_MIXER_MAX_BUTTONS = 3 # Can be adjusted
+
+def gen_target_colors(max_num_buttons_for_mix):
+    # Ensure we don't try to sample more colors than available
+    num_colors_to_mix = random.randint(1, min(max_num_buttons_for_mix, len(all_colors)))
+    cols = random.sample(all_colors, num_colors_to_mix)
+    return [buttons[col].rgb for col in cols ]
+
+# Constants for color mixer animation
+COLOR_MIXER_ANIM_DURATION = 750
+COLOR_MIXER_ANIM_HOLD_FINAL = 1250
+COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION = COLOR_MIXER_ANIM_DURATION + COLOR_MIXER_ANIM_HOLD_FINAL
+
+
+@dataclass
+class ColorMixerState:
+    target_rgbs: "list[RGB]"
+    victory_anim_start_time: int
+    victory_screen_end_time: int
+    victory_rgbs: "list[RGB]"
+    last_change_time: int
+    last_rgb: RGB
+    max_num_buttons: int
+
+    def __post_init__(self):
+        # Initialize target_rgbs if not provided (e.g., for initial game start)
+        if not self.target_rgbs:
+            self.target_rgbs = gen_target_colors(self.max_num_buttons)
+        # Initialize time variables for a fresh start
+        self.victory_anim_start_time = -COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION # Ensure initial screen is game
+        self.victory_screen_end_time = -COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION
+        self.victory_rgbs = []
+        self.last_change_time = -100
+        self.last_rgb = RGB(0,0,0)
+
+
+    def draw(self, surface):
+        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+        center_x = CANVAS_WIDTH // 2
+        center_y = CANVAS_HEIGHT // 2
+        current_time = pygame.time.get_ticks() # Get current time for drawing logic
+
+        if current_time > self.victory_screen_end_time:
+            # Normal game screen
+            current_rgb_from_buttons = average([button.rgb for button in buttons_in_order if button.is_pressed()])
+            surface.fill(current_rgb_from_buttons.to_tuple())
+            pygame.draw.circle(surface, average(self.target_rgbs).to_tuple(), (center_x, center_y), 100)
+        else:
+            # Victory animation screen
+            surface.fill((222,222,222)) # Background for animation
+
+            num_squares = len(self.victory_rgbs)
+
+            t = max(0, (current_time - self.victory_anim_start_time) / COLOR_MIXER_ANIM_DURATION)
+            t_capped = min(1, t)
+            u = max(0, (current_time - self.victory_anim_start_time) / COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION)
+
+            for i, victory_rgb in enumerate(self.victory_rgbs):
+                surf = pygame.Surface((200, 200), flags=pygame.SRCALPHA)
+                surf.fill((0,0,0,0)) # Transparent background
+
+                pygame.draw.circle(surf, victory_rgb.to_tuple() + (255 // num_squares,), (100,100), 100)
+                
+                start_center_x = center_x
+                start_center_y = center_y
+
+                direction_rads = i / num_squares * (2 * pi) - pi / 2 + u / 2 * pi
+                distance_to_travel = 60
+                dx = distance_to_travel * cos(direction_rads)
+                dy = distance_to_travel * sin(direction_rads)
+
+                end_center_x = start_center_x + dx
+                end_center_y = start_center_y + dy
+
+                current_center_x = start_center_x + (end_center_x - start_center_x) * t_capped
+                current_center_y = start_center_y + (end_center_y - start_center_y) * t_capped
+
+                surface.blit(surf, (current_center_x - 100, current_center_y - 100))
+
+
+    def next_state(self, input: Input):
+        current_time = input.current_time # Use the current_time from Input
+
+        # Handle button LEDs
+        for button in buttons.values():
+            if not button.is_pressed():
+                button.set_led(True)
+            else:
+                button.set_led(False)
+
+        if current_time > self.victory_screen_end_time:
+            # Game is active, not in victory animation
+            rgbs = [button.rgb for button in input.buttons if button.is_pressed()]
+            current_rgb = average(rgbs)
+
+            if current_rgb != self.last_rgb:
+                self.last_rgb = current_rgb
+                self.last_change_time = current_time
+
+            if current_rgb == average(self.target_rgbs) and (self.last_change_time + 150 < current_time):
+                # Correct mix achieved, start victory animation
+                self.victory_rgbs = self.target_rgbs # Store for animation
+                self.target_rgbs = gen_target_colors(self.max_num_buttons) # Generate new target
+                self.victory_screen_end_time = current_time + COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION
+                self.victory_anim_start_time = current_time
+        else:
+            # In victory animation, check if any button is pressed to extend it
+            if any(button.is_pressed() for button in input.buttons):
+                self.victory_screen_end_time = max(self.victory_screen_end_time, current_time + 200)
+
+        return self # Always return self for now, as color mixer doesn't transition to other game types
+
+# --- End Color Mixer Game Logic Integration ---
+
+
 def new_game(mode:str):
     qs = []
     if mode == "capitals":
@@ -397,6 +527,16 @@ def new_game(mode:str):
         qs = sports_team_questions()
     elif mode == "jeopardy":
         qs = jeopardy_questions()
+    elif mode == "color_mixer": # New game mode
+        return ColorMixerState(
+            target_rgbs=[], # Will be initialized in __post_init__
+            victory_anim_start_time=0, # Placeholder, will be set in __post_init__
+            victory_screen_end_time=0, # Placeholder, will be set in __post_init__
+            victory_rgbs=[], # Placeholder, will be set in __post_init__
+            last_change_time=0, # Placeholder, will be set in __post_init__
+            last_rgb=RGB(0,0,0), # Placeholder, will be set in __post_init__
+            max_num_buttons=COLOR_MIXER_MAX_BUTTONS
+        )
      
     score = Score(
         correct=0,
@@ -419,11 +559,17 @@ def main():
     game_over = False
     while not game_over:
         screen.fill((240, 240, 240))  # RGB for white background
-        state = state.next_state(Input(buttons_in_order))
+        current_time = pygame.time.get_ticks() # Get current time in main loop
+        state = state.next_state(Input(buttons_in_order, current_time)) # Pass current_time
         state.draw(screen)
         pygame.display.flip()  # Update the display
         for event in pygame.event.get():
-            pass
+            # Allow quitting the game
+            if event.type == pygame.QUIT:
+                game_over = True
+            # Check for escape key to quit, ensuring it's a KEYDOWN event
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                game_over = True
            
 def safe_remove(key, state_list):
     # function checks to make sure there is an item in the list to be removed
@@ -431,4 +577,7 @@ def safe_remove(key, state_list):
         state_list.remove(key)
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    finally:
+        GPIO.cleanup() # Clean up GPIO on exit
