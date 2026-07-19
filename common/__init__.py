@@ -7,16 +7,24 @@ objects defined in hardware.py.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
 from typing import Callable, Generic, Protocol, TypeVar
 
 import pygame
 
 from hardware import Button, buttons_in_order
 
-pygame.init()
 
-state_font = pygame.font.SysFont("", 60)
-answer_font = pygame.font.SysFont("", 25)
+@cache
+def font(size: int) -> pygame.font.Font:
+    """A SysFont of the given size, created lazily on first use and cached.
+
+    Deferred (rather than built at import time) so that importing a game's logic
+    -- e.g. from a test that only walks next_state and never draws -- doesn't
+    require pygame's font subsystem to be up. Only draw() ever calls this."""
+    if not pygame.font.get_init():
+        pygame.font.init()
+    return pygame.font.SysFont("", size)
 
 
 @dataclass
@@ -82,7 +90,7 @@ class AnswerPicker(Generic[T]):
 
         for i in range(len(self.options)):
             pygame.draw.rect(surface, buttons_in_order[i].rgb.to_tuple(), pygame.Rect(((i + 0.5) * (CANVAS_WIDTH // 6), answer_height + 20), (CANVAS_WIDTH // 6, 10)))
-            draw_text(surface, answer_font, self.options[i], (CANVAS_WIDTH // 6 * (i + 1), answer_height))
+            draw_text(surface, font(25), self.options[i], (CANVAS_WIDTH // 6 * (i + 1), answer_height))
 
     def selection(self, input: Input) -> T | None:
         pressed_buttons = [i for i, button in enumerate(input.buttons) if button.is_pressed()]
@@ -106,7 +114,7 @@ class GetReadyScreen:
 
     def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
-        draw_text(surface, state_font, "Get Ready...", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
+        draw_text(surface, font(60), "Get Ready...", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
 
     def next_state(self, input: Input) -> State | None:
         pressed_buttons = [button for button in input.buttons if button.is_pressed()]

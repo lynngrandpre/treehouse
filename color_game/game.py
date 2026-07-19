@@ -21,16 +21,14 @@ def average(rgbs: list[RGB]) -> RGB:
     return current_color / len(rgbs)
 
 
-MAX_BUTTONS_TO_MIX = 3
-
 COLOR_MIXER_ANIM_DURATION = 750
 COLOR_MIXER_ANIM_HOLD_FINAL = 1250
 COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION = COLOR_MIXER_ANIM_DURATION + COLOR_MIXER_ANIM_HOLD_FINAL
 
 
-def gen_target_colors(max_num_buttons_for_mix: int) -> list[RGB]:
+def gen_target_colors(min_num_buttons: int, max_num_buttons: int) -> list[RGB]:
     all_colors = list(Color)
-    num_colors_to_mix = random.randint(1, min(max_num_buttons_for_mix, len(all_colors)))
+    num_colors_to_mix = random.randint(min_num_buttons, min(max_num_buttons, len(all_colors)))
     cols = random.sample(all_colors, num_colors_to_mix)
     return [buttons[col].rgb for col in cols]
 
@@ -43,11 +41,12 @@ class ColorMixerState:
     victory_rgbs: list[RGB]
     last_change_time: int
     last_rgb: RGB
+    min_num_buttons: int
     max_num_buttons: int
 
     def __post_init__(self) -> None:
         if not self.target_rgbs:
-            self.target_rgbs = gen_target_colors(self.max_num_buttons)
+            self.target_rgbs = gen_target_colors(self.min_num_buttons, self.max_num_buttons)
         # Ensure the initial screen is the game, not a victory animation.
         self.victory_anim_start_time = -COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION
         self.victory_screen_end_time = -COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION
@@ -115,7 +114,7 @@ class ColorMixerState:
 
             if current_rgb == average(self.target_rgbs) and (self.last_change_time + 150 < current_time):
                 self.victory_rgbs = self.target_rgbs
-                self.target_rgbs = gen_target_colors(self.max_num_buttons)
+                self.target_rgbs = gen_target_colors(self.min_num_buttons, self.max_num_buttons)
                 self.victory_screen_end_time = current_time + COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION
                 self.victory_anim_start_time = current_time
         else:
@@ -125,7 +124,7 @@ class ColorMixerState:
         return self
 
 
-def new_color_game() -> ColorMixerState:
+def new_color_game(min_num_buttons: int, max_num_buttons: int) -> ColorMixerState:
     return ColorMixerState(
         target_rgbs=[],
         victory_anim_start_time=0,
@@ -133,5 +132,6 @@ def new_color_game() -> ColorMixerState:
         victory_rgbs=[],
         last_change_time=0,
         last_rgb=RGB(0, 0, 0),
-        max_num_buttons=MAX_BUTTONS_TO_MIX,
+        min_num_buttons=min_num_buttons,
+        max_num_buttons=max_num_buttons,
     )

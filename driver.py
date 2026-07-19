@@ -15,7 +15,7 @@ from __future__ import annotations
 import pygame
 
 from hardware import SIMULATOR, GPIO, buttons_in_order
-from common import Input, GetReadyScreen, State
+from common import Input, GetReadyScreen, State, font
 
 # Only ever used in the simulator-only helpers below. Importing it unconditionally
 # (rather than through the same `GPIO` name hardware.py picks based on SIMULATOR)
@@ -38,9 +38,6 @@ _BUTTON_AREA_HEIGHT = 140
 _BUTTON_SIZE = 90
 _BUTTON_GAP = 20
 _BUTTON_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]
-
-if SIMULATOR:
-    _button_font = pygame.font.SysFont("", 40)
 
 
 def _button_rects() -> list[pygame.Rect]:
@@ -76,7 +73,7 @@ def _draw_simulator_chrome(window: pygame.Surface, device_surface: pygame.Surfac
         pygame.draw.rect(window, color, rect, border_radius=10)
         pygame.draw.rect(window, (0, 0, 0), rect, 2, border_radius=10)
 
-        label = _button_font.render(str(i + 1), True, (0, 0, 0))
+        label = font(40).render(str(i + 1), True, (0, 0, 0))
         window.blit(label, label.get_rect(center=rect.center))
 
 
@@ -86,6 +83,7 @@ def run(initial_state: State) -> None:
     The loop repeatedly polls input, advances state, and draws the result.
     Returning None from `next_state` sends the player back to the menu.
     """
+    pygame.init()
     try:
         if SIMULATOR:
             button_rects = _button_rects()

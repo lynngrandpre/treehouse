@@ -7,16 +7,13 @@ from pathlib import Path
 
 import pygame
 
-from common import AnswerPicker, Input, State, draw_text, state_font
+from common import AnswerPicker, Input, State, draw_text, font
 
 from .state_info import state_info
 
 DONE = 5     # number of incorrect guesses to end the game
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
-
-scoreboard_font = pygame.font.SysFont("", 30)
-q_font_small = pygame.font.SysFont("", 35)
 
 
 @dataclass
@@ -64,11 +61,11 @@ class QuizResultScreen:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
         if len(self.score.remaining_questions) == 0:
-            draw_text(surface, state_font, "You Win", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
-            draw_text(surface, state_font, f"Mistakes: {self.score.wrong}", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2 + 50))
+            draw_text(surface, font(60), "You Win", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
+            draw_text(surface, font(60), f"Mistakes: {self.score.wrong}", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2 + 50))
         else:
-            draw_text(surface, state_font, "You Lose :(", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
-            draw_text(surface, state_font, f"Correct: {self.score.correct}", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2 + 50))
+            draw_text(surface, font(60), "You Lose :(", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
+            draw_text(surface, font(60), f"Correct: {self.score.correct}", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2 + 50))
 
     def next_state(self, input: Input) -> State | None:
         pressed_buttons = [button for button in input.buttons if button.is_pressed()]
@@ -83,7 +80,7 @@ def draw_question(surface: pygame.Surface, question: str) -> None:
     CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
     if len(question) < 40:
-        draw_text(surface, state_font, question, (CANVAS_WIDTH // 2, CANVAS_HEIGHT / 2))
+        draw_text(surface, font(60), question, (CANVAS_WIDTH // 2, CANVAS_HEIGHT / 2))
     else:
         halfway = len(question) // 2
         # Find the first space after halfway
@@ -93,8 +90,8 @@ def draw_question(surface: pygame.Surface, question: str) -> None:
         start = question[:cutoff]
         end = question[cutoff:].lstrip()
 
-        draw_text(surface, q_font_small, start, (CANVAS_WIDTH // 2, CANVAS_HEIGHT / 2))
-        draw_text(surface, q_font_small, end, (CANVAS_WIDTH // 2, CANVAS_HEIGHT / 2 + 40))
+        draw_text(surface, font(35), start, (CANVAS_WIDTH // 2, CANVAS_HEIGHT / 2))
+        draw_text(surface, font(35), end, (CANVAS_WIDTH // 2, CANVAS_HEIGHT / 2 + 40))
 
 
 @dataclass
@@ -109,8 +106,8 @@ class RevealAnswer:
 
         self.question.answer_picker(True).draw(surface)
 
-        draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
-        draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
+        draw_text(surface, font(30), f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
+        draw_text(surface, font(30), f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
 
     def next_state(self, input: Input) -> State | None:
         pressed_buttons = [button for button in input.buttons if button.is_pressed()]
@@ -142,8 +139,8 @@ class AskingQuestionState:
 
         self.question.answer_picker(False).draw(surface)
 
-        draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
-        draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
+        draw_text(surface, font(30), f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
+        draw_text(surface, font(30), f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
 
     def next_state(self, input: Input) -> State | None:
         correct = self.question.answer_picker(False).selection(input)
