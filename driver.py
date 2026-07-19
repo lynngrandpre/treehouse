@@ -10,10 +10,12 @@ rectangle, with clickable on-screen buttons (also mappable to keys 1-5) standing
 for the physical ones.
 """
 
+from __future__ import annotations
+
 import pygame
 
 from hardware import SIMULATOR, GPIO, buttons_in_order
-from common import Input, GetReadyScreen
+from common import Input, GetReadyScreen, State
 
 # Only ever used in the simulator-only helpers below. Importing it unconditionally
 # (rather than through the same `GPIO` name hardware.py picks based on SIMULATOR)
@@ -41,7 +43,7 @@ if SIMULATOR:
     _button_font = pygame.font.SysFont("", 40)
 
 
-def _button_rects():
+def _button_rects() -> list[pygame.Rect]:
     total_width = len(buttons_in_order) * _BUTTON_SIZE + (len(buttons_in_order) - 1) * _BUTTON_GAP
     start_x = _MARGIN + (DEVICE_WIDTH - total_width) // 2
     y = _MARGIN + DEVICE_HEIGHT + (_BUTTON_AREA_HEIGHT - _BUTTON_SIZE) // 2
@@ -51,7 +53,7 @@ def _button_rects():
     ]
 
 
-def _update_simulated_input(button_rects):
+def _update_simulated_input(button_rects: list[pygame.Rect]) -> None:
     mouse_pos = pygame.mouse.get_pos()
     mouse_down = pygame.mouse.get_pressed()[0]
     keys_down = pygame.key.get_pressed()
@@ -61,7 +63,7 @@ def _update_simulated_input(button_rects):
         sim_gpio.set_input_state(button.switch_pin, pressed)
 
 
-def _draw_simulator_chrome(window, device_surface, button_rects):
+def _draw_simulator_chrome(window: pygame.Surface, device_surface: pygame.Surface, button_rects: list[pygame.Rect]) -> None:
     window.fill((60, 60, 60))
     window.blit(device_surface, (_MARGIN, _MARGIN))
     pygame.draw.rect(window, (0, 0, 0), (_MARGIN, _MARGIN, DEVICE_WIDTH, DEVICE_HEIGHT), 2)
@@ -78,12 +80,11 @@ def _draw_simulator_chrome(window, device_surface, button_rects):
         window.blit(label, label.get_rect(center=rect.center))
 
 
-def run(initial_state):
+def run(initial_state: State) -> None:
     """Runs the game loop until the window is closed or Escape is pressed.
 
-    `initial_state` must implement `next_state(input) -> state | None` and
-    `draw(surface)`; the loop repeatedly polls input, advances state, and draws the
-    result. Returning None from `next_state` sends the player back to the menu.
+    The loop repeatedly polls input, advances state, and draws the result.
+    Returning None from `next_state` sends the player back to the menu.
     """
     try:
         if SIMULATOR:

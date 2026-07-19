@@ -8,5 +8,13 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "ruff>=0.15.22",
     "types-rpi-gpio>=0.7.0.20250801",
 ]
+
+[tool.ruff.lint]
+# flake8-annotations: flag missing type annotations on function args/returns.
+# ANN401 (disallows explicit `Any`) is excluded -- that's about annotations
+# being too loose, not missing, which is a different ask.
+extend-select = ["ANN"]
+ignore = ["ANN401"]

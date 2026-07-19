@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import random
 from dataclasses import dataclass
 from math import cos, sin, pi
@@ -5,10 +7,10 @@ from math import cos, sin, pi
 import pygame
 
 from hardware import Color, RGB, buttons, buttons_in_order
-from common import Input
+from common import Input, State
 
 
-def average(rgbs):
+def average(rgbs: list[RGB]) -> RGB:
     current_color = RGB(0, 0, 0)
     if len(rgbs) == 0:
         return current_color
@@ -26,7 +28,7 @@ COLOR_MIXER_ANIM_HOLD_FINAL = 1250
 COLOR_MIXER_MIN_VICTORY_SCREEN_DURATION = COLOR_MIXER_ANIM_DURATION + COLOR_MIXER_ANIM_HOLD_FINAL
 
 
-def gen_target_colors(max_num_buttons_for_mix):
+def gen_target_colors(max_num_buttons_for_mix: int) -> list[RGB]:
     all_colors = list(Color)
     num_colors_to_mix = random.randint(1, min(max_num_buttons_for_mix, len(all_colors)))
     cols = random.sample(all_colors, num_colors_to_mix)
@@ -35,15 +37,15 @@ def gen_target_colors(max_num_buttons_for_mix):
 
 @dataclass
 class ColorMixerState:
-    target_rgbs: "list[RGB]"
+    target_rgbs: list[RGB]
     victory_anim_start_time: int
     victory_screen_end_time: int
-    victory_rgbs: "list[RGB]"
+    victory_rgbs: list[RGB]
     last_change_time: int
     last_rgb: RGB
     max_num_buttons: int
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.target_rgbs:
             self.target_rgbs = gen_target_colors(self.max_num_buttons)
         # Ensure the initial screen is the game, not a victory animation.
@@ -53,7 +55,7 @@ class ColorMixerState:
         self.last_change_time = -100
         self.last_rgb = RGB(0, 0, 0)
 
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
         center_x = CANVAS_WIDTH // 2
         center_y = CANVAS_HEIGHT // 2
@@ -94,7 +96,7 @@ class ColorMixerState:
 
                 surface.blit(surf, (current_center_x - 100, current_center_y - 100))
 
-    def next_state(self, input: Input):
+    def next_state(self, input: Input) -> State | None:
         current_time = input.current_time
 
         for button in buttons.values():
@@ -123,7 +125,7 @@ class ColorMixerState:
         return self
 
 
-def new_color_game():
+def new_color_game() -> ColorMixerState:
     return ColorMixerState(
         target_rgbs=[],
         victory_anim_start_time=0,

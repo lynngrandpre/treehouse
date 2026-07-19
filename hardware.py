@@ -5,6 +5,10 @@ Sits at the very bottom of the import graph -- imports nothing from anywhere els
 in the app, so everything else can import it freely without cycles.
 """
 
+# Makes annotations lazy, so modern syntax (list[str], X | None, forward refs,
+# unquoted) works even on the Pi's older system Python. Same idea in every file.
+from __future__ import annotations
+
 import os
 import sys
 from dataclasses import dataclass
@@ -32,19 +36,21 @@ class RGB:
     green: int
     blue: int
 
-    def __add__(self, other):
+    def __add__(self, other: RGB) -> RGB:
         return RGB(self.red + other.red, self.green + other.green, self.blue + other.blue)
 
-    def __truediv__(self, scalar):
+    def __truediv__(self, scalar: int) -> RGB:
         return RGB(self.red // scalar, self.green // scalar, self.blue // scalar)
 
-    def __mul__(self, scalar):
+    def __mul__(self, scalar: int) -> RGB:
         return RGB(self.red * scalar, self.green * scalar, self.blue * scalar)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RGB):
+            return NotImplemented
         return self.red == other.red and self.blue == other.blue and self.green == other.green
 
-    def to_tuple(self):
+    def to_tuple(self) -> tuple[int, int, int]:
         return (self.red, self.green, self.blue)
 
 
@@ -54,10 +60,10 @@ class Button:
     switch_pin: int
     rgb: RGB
 
-    def set_led(self, on: bool):
+    def set_led(self, on: bool) -> None:
         GPIO.output(self.led_pin, on)
 
-    def is_pressed(self):
+    def is_pressed(self) -> bool:
         return not GPIO.input(self.switch_pin)
 
 

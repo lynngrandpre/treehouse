@@ -4,9 +4,13 @@ directory (see quiz/ and color_game/ for the pattern), exposing it as a `Game` f
 that directory's __init__.py, and importing it here.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, replace
 
-from common import AnswerPicker, Game, GetReadyScreen, Input, draw_text, state_font
+import pygame
+
+from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, state_font
 
 import color_game
 import quiz
@@ -20,31 +24,31 @@ all_games = color_game.games + quiz.games
 class MenuState:
     page: int = 0
 
-    def _paginated(self):
+    def _paginated(self) -> bool:
         return len(all_games) > 5
 
-    def _games_this_page(self):
+    def _games_this_page(self) -> list[Game]:
         if not self._paginated():
             return all_games
         start = self.page * GAMES_PER_PAGE
         return all_games[start:start + GAMES_PER_PAGE]
 
-    def _options_picker(self):
+    def _options_picker(self) -> AnswerPicker[Game | str]:
         games_this_page = self._games_this_page()
         if not self._paginated():
             options = [g.name for g in games_this_page]
-            values = list(games_this_page)
+            values: list[Game | str] = list(games_this_page)
         else:
             options = ["<"] + [g.name for g in games_this_page] + [">"]
             values = ["prev"] + list(games_this_page) + ["next"]
         return AnswerPicker(options, values)
 
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
         draw_text(surface, state_font, "Choose a Game", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 3))
         self._options_picker().draw(surface)
 
-    def next_state(self, input: Input):
+    def next_state(self, input: Input) -> State | None:
         selection = self._options_picker().selection(input)
 
         if selection == "prev":
@@ -58,5 +62,5 @@ class MenuState:
             return self
 
 
-def home():
+def home() -> MenuState:
     return MenuState()

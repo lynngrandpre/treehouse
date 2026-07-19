@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import random
 from dataclasses import dataclass, replace
@@ -5,7 +7,7 @@ from pathlib import Path
 
 import pygame
 
-from common import AnswerPicker, Input, draw_text, state_font
+from common import AnswerPicker, Input, State, draw_text, state_font
 
 from .state_info import state_info
 
@@ -21,9 +23,9 @@ q_font_small = pygame.font.SysFont("", 35)
 class Score:
     correct: int
     wrong: int
-    remaining_questions: "list[Question]"
+    remaining_questions: list[Question]
 
-    def question_answered(self, correct, question):
+    def question_answered(self, correct: bool, question: Question) -> Score:
         if correct:
             return replace(
                 self,
@@ -33,17 +35,17 @@ class Score:
         else:
             return replace(self, wrong=self.wrong + 1)
 
-    def random_question(self):
+    def random_question(self) -> Question:
         return random.choice(self.remaining_questions)
 
 
 @dataclass
 class Question:
     question: str
-    options: "list[str]"
+    options: list[str]
     correct_index: int
 
-    def answer_picker(self, reveal_answer: bool):
+    def answer_picker(self, reveal_answer: bool) -> AnswerPicker[bool]:
         options = self.options
         if reveal_answer:
             options = ["" if i != self.correct_index else o for i, o in enumerate(self.options)]
@@ -58,7 +60,7 @@ class Question:
 class QuizResultScreen:
     score: Score
 
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
         if len(self.score.remaining_questions) == 0:
@@ -68,7 +70,7 @@ class QuizResultScreen:
             draw_text(surface, state_font, "You Lose :(", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
             draw_text(surface, state_font, f"Correct: {self.score.correct}", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2 + 50))
 
-    def next_state(self, input: Input):
+    def next_state(self, input: Input) -> State | None:
         pressed_buttons = [button for button in input.buttons if button.is_pressed()]
 
         if len(pressed_buttons) > 0:
@@ -77,7 +79,7 @@ class QuizResultScreen:
             return self
 
 
-def draw_question(surface, question):
+def draw_question(surface: pygame.Surface, question: str) -> None:
     CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
     if len(question) < 40:
@@ -100,7 +102,7 @@ class RevealAnswer:
     question: Question
     score: Score
 
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
         draw_question(surface, self.question.question)
@@ -110,7 +112,7 @@ class RevealAnswer:
         draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
         draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
 
-    def next_state(self, input: Input):
+    def next_state(self, input: Input) -> State | None:
         pressed_buttons = [button for button in input.buttons if button.is_pressed()]
 
         if len(pressed_buttons) == 0:
@@ -133,7 +135,7 @@ class AskingQuestionState:
     question: Question
     score: Score
 
-    def draw(self, surface):
+    def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
 
         draw_question(surface, self.question.question)
@@ -143,7 +145,7 @@ class AskingQuestionState:
         draw_text(surface, scoreboard_font, f"Correct {self.score.correct}", (CANVAS_WIDTH - 100, 50))
         draw_text(surface, scoreboard_font, f"Wrong   {self.score.wrong}", (CANVAS_WIDTH - 100, 80))
 
-    def next_state(self, input: Input):
+    def next_state(self, input: Input) -> State | None:
         correct = self.question.answer_picker(False).selection(input)
         if correct is None:
             return self
@@ -156,7 +158,7 @@ class AskingQuestionState:
         )
 
 
-def state_capital_questions(hard_mode):
+def state_capital_questions(hard_mode: bool) -> list[Question]:
     qs = []
     for state_name in state_info.keys():
         correct_answer = state_info[state_name]['capital']
@@ -180,7 +182,7 @@ def state_capital_questions(hard_mode):
     return qs
 
 
-def jeopardy_questions():
+def jeopardy_questions() -> list[Question]:
     with open(DATA_DIR / "jeopardy_quiz.json", "r") as f:
         jeopardy_data = json.load(f)
 
@@ -207,7 +209,7 @@ def jeopardy_questions():
     return random.sample(qs, 20)
 
 
-def sports_team_questions():
+def sports_team_questions() -> list[Question]:
     qs = []
     all_options = list(state_info.keys())
     for state_name, info in state_info.items():
@@ -230,7 +232,7 @@ def sports_team_questions():
     return random.sample(qs, 20)
 
 
-def new_quiz(mode: str):
+def new_quiz(mode: str) -> AskingQuestionState:
     if mode == "capitals":
         qs = state_capital_questions(False)
     elif mode == "capitals_hard":
