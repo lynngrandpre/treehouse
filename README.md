@@ -11,7 +11,7 @@ Test: `uvx run pytest`
 
 # Structure
 
-New games should be place in their own directory. They should expose a list of games in **init**.py, and that list should be imported from menu.py
+New games should be place in their own directory. They should expose a list of games in `__init__.py`, and that list should be imported from menu.py
 
 Ideally, every game should be written in the "state machine style" of quiz. For more continuous games, you can do something like color_game - just one state that always returns itself.
 
