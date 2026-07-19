@@ -88,9 +88,10 @@ class AnswerPicker(Generic[T]):
 
         pygame.draw.rect(surface, (0, 0, 0), pygame.Rect(((0.5) * (CANVAS_WIDTH // 6) - 2, answer_height + 20 - 2), (5 * CANVAS_WIDTH // 6 + 2, 10 + 4)))
 
-        for i in range(len(self.options)):
+        for i in range(5):
             pygame.draw.rect(surface, buttons_in_order[i].rgb.to_tuple(), pygame.Rect(((i + 0.5) * (CANVAS_WIDTH // 6), answer_height + 20), (CANVAS_WIDTH // 6, 10)))
-            draw_text(surface, font(25), self.options[i], (CANVAS_WIDTH // 6 * (i + 1), answer_height))
+            if i < len(self.options):
+                draw_text(surface, font(25), self.options[i], (CANVAS_WIDTH // 6 * (i + 1), answer_height))
 
     def selection(self, input: Input) -> T | None:
         pressed_buttons = [i for i, button in enumerate(input.buttons) if button.is_pressed()]

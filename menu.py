@@ -43,7 +43,9 @@ class MenuState:
             options = [g.name for g in games_this_page]
             values: list[Game | str] = list(games_this_page)
         else:
-            options = ["<"] + [g.name for g in games_this_page] + [">"]
+            left = ["<"] if self.page > 0 else [""]
+            right = [">"] if self.page < (len(all_games) - 1) // GAMES_PER_PAGE else [""]
+            options = left + [g.name for g in games_this_page] + right
             values = ["prev"] + list(games_this_page) + ["next"]
         return AnswerPicker(options, values)
 
