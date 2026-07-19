@@ -1,8 +1,8 @@
 """A drop-in stand-in for RPi.GPIO, used when the driver runs in simulator mode.
 
-Implements just the pieces of the RPi.GPIO interface that Button (in driver.py)
+Implements just the pieces of the RPi.GPIO interface that Button (in hardware.py)
 relies on, backed by in-memory pin state instead of real hardware. Games never
-import this directly -- driver.py picks it or the real RPi.GPIO based on mode.
+import this directly -- hardware.py picks it or the real RPi.GPIO based on mode.
 """
 
 BCM = "BCM"

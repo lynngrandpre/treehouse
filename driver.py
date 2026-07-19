@@ -1,7 +1,8 @@
-"""The general-purpose driver: hardware setup and the input -> update -> draw game
-loop shared by every game. Game-specific code (like state_game.py) only needs to
-build an initial state object -- with `next_state(input)` and `draw(surface)` -- and
-hand it to `run()`.
+"""The entry point and game loop: sets up the simulator window (if enabled) and
+repeatedly polls input, advances the current state, and draws it. A game's
+`next_state(input)` can return None to signal "I'm done, take me back to the menu" --
+the loop catches that and resets to menu.home(), through a brief GetReadyScreen so a
+still-held button isn't misread as a press in the menu.
 
 Runs against real hardware by default. Pass --simulator (or set SIMULATOR=1) to run
 in a window on a laptop instead: the device's screen is drawn as an embedded
@@ -9,89 +10,12 @@ rectangle, with clickable on-screen buttons (also mappable to keys 1-5) standing
 for the physical ones.
 """
 
-import os
-import sys
-from dataclasses import dataclass
-from enum import Enum
-
 import pygame
 
-SIMULATOR = "--simulator" in sys.argv or os.environ.get("SIMULATOR") == "1"
+from hardware import SIMULATOR, GPIO, buttons_in_order
+from common import Input, GetReadyScreen
 
-if SIMULATOR:
-    import sim_gpio as GPIO
-else:
-    import RPi.GPIO as GPIO
-
-
-class Color(Enum):
-    RED = 1
-    GREEN = 2
-    BLUE = 3
-    YELLOW = 4
-    WHITE = 5
-
-
-@dataclass
-class RGB:
-    red: int
-    green: int
-    blue: int
-
-    def __add__(self, other):
-        return RGB(self.red + other.red, self.green + other.green, self.blue + other.blue)
-
-    def __truediv__(self, scalar):
-        return RGB(self.red // scalar, self.green // scalar, self.blue // scalar)
-
-    def __mul__(self, scalar):
-        return RGB(self.red * scalar, self.green * scalar, self.blue * scalar)
-
-    def __eq__(self, other):
-        return self.red == other.red and self.blue == other.blue and self.green == other.green
-
-    def to_tuple(self):
-        return (self.red, self.green, self.blue)
-
-
-@dataclass
-class Button:
-    led_pin: int
-    switch_pin: int
-    rgb: RGB
-
-    def set_led(self, on: bool):
-        GPIO.output(self.led_pin, on)
-
-    def is_pressed(self):
-        return not GPIO.input(self.switch_pin)
-
-
-buttons = {
-    Color.RED:    Button(20, 26, RGB(240, 15, 25)),
-    Color.GREEN:  Button(16, 19, RGB(0, 220, 0)),
-    Color.WHITE:  Button(13, 12, RGB(255, 255, 255)),
-    Color.YELLOW: Button(6, 5, RGB(255, 235, 0)),
-    Color.BLUE:   Button(23, 22, RGB(0, 0, 255)),
-}
-
-# Left to right, as the buttons are physically wired up.
-buttons_in_order = [buttons[c] for c in [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.WHITE]]
-
-GPIO.setmode(GPIO.BCM)
-
-for button in buttons.values():
-    GPIO.setup(button.led_pin, GPIO.OUT)
-    GPIO.setup(button.switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-
-@dataclass
-class Input:
-    buttons: "list[Button]"
-    current_time: int
-
-
-pygame.init()
+import menu
 
 # The real device is a small touchscreen run fullscreen at whatever resolution
 # it happens to have. The simulator has no such screen to ask, so it stands
@@ -150,8 +74,9 @@ def _draw_simulator_chrome(window, device_surface, button_rects):
 def run(initial_state):
     """Runs the game loop until the window is closed or Escape is pressed.
 
-    `initial_state` must implement `next_state(input) -> state` and `draw(surface)`;
-    the loop repeatedly polls input, advances state, and draws the result.
+    `initial_state` must implement `next_state(input) -> state | None` and
+    `draw(surface)`; the loop repeatedly polls input, advances state, and draws the
+    result. Returning None from `next_state` sends the player back to the menu.
     """
     try:
         if SIMULATOR:
@@ -174,6 +99,8 @@ def run(initial_state):
             device_surface.fill((240, 240, 240))
             current_time = pygame.time.get_ticks()
             state = state.next_state(Input(buttons_in_order, current_time))
+            if state is None:
+                state = GetReadyScreen(menu.home)
             state.draw(device_surface)
 
             if SIMULATOR:
@@ -188,3 +115,7 @@ def run(initial_state):
                     game_over = True
     finally:
         GPIO.cleanup()
+
+
+if __name__ == '__main__':
+    run(menu.home())
