@@ -5,93 +5,17 @@ from math import cos, sin, pi # Added for color_mixer animation
 
 from state_info import state_info
 
-import RPi.GPIO as GPIO
-
-from enum import Enum
-from typing import Union
+import driver
+from driver import Color, RGB, Input, buttons, buttons_in_order
 
 DONE = 5     # number of incorrect guesses to end the game
-
-
-
-pygame.init()
-pygame.mouse.set_visible(False) # Hide cursor here
 
 state_font = pygame.font.SysFont("", 60)
 answer_font = pygame.font.SysFont("", 25)
 scoreboard_font = pygame.font.SysFont("", 30)
 q_font_small = pygame.font.SysFont("", 35)
 
-
-
-class Color(Enum):
-    RED = 1
-    GREEN = 2
-    BLUE = 3
-    YELLOW = 4
-    WHITE = 5
-
 all_colors = [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.WHITE]
-
-@dataclass
-class RGB:
-    red: int
-    green: int
-    blue: int
-
-    def __add__(self, other):
-        return RGB(self.red + other.red, self.green + other.green, self.blue + other.blue)
-    
-    def __truediv__(self, scalar):
-        return RGB(self.red//scalar, self.green//scalar, self.blue//scalar)
-    
-    def __mul__(self, scalar):
-        return RGB(self.red*scalar, self.green*scalar, self.blue*scalar)
-    
-    def __eq__(self, other):
-        return self.red == other.red and self.blue == other.blue and self.green == other.green
-
-    def to_tuple(self):
-        return (self.red, self.green, self.blue)
-
-@dataclass
-class Button:
-    led_pin: int
-    switch_pin: int
-    rgb: RGB
-
-    def set_led(self, on: bool):
-        GPIO.output(self.led_pin, on) 
-    
-    def is_pressed(self):
-        return not GPIO.input(self.switch_pin)
-        
-
-buttons= {
-    Color.RED:    Button(20,26,RGB(240,15,25)),
-    Color.GREEN:  Button(16, 19,RGB(0,220,0)),
-    Color.WHITE:  Button(13, 12, RGB(255,255,255)),
-    Color.YELLOW: Button(6, 5, RGB(255,235,0)),
-    Color.BLUE:   Button(23, 22, RGB(0,0,255)),
-}
-
-buttons_in_order = [buttons[c] for c in [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.WHITE]]
-
-
-# Set up GPIO using BCM numbering
-GPIO.setmode(GPIO.BCM)
-
-# Set GPIO PIN as output
-# Set GPIO PIN_IN as input
-
-for button in buttons.values():
-    GPIO.setup(button.led_pin, GPIO.OUT)
-    GPIO.setup(button.switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-@dataclass
-class Input:
-    buttons: "list[Button]"
-    current_time: int # Added current_time to Input
 
 
 @dataclass
@@ -549,35 +473,10 @@ def new_game(mode:str):
     )
     return state
 
-def main():
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-
-    state = WinScreen(Score(0,0,[]))
-
-
-
-    game_over = False
-    while not game_over:
-        screen.fill((240, 240, 240))  # RGB for white background
-        current_time = pygame.time.get_ticks() # Get current time in main loop
-        state = state.next_state(Input(buttons_in_order, current_time)) # Pass current_time
-        state.draw(screen)
-        pygame.display.flip()  # Update the display
-        for event in pygame.event.get():
-            # Allow quitting the game
-            if event.type == pygame.QUIT:
-                game_over = True
-            # Check for escape key to quit, ensuring it's a KEYDOWN event
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                game_over = True
-           
 def safe_remove(key, state_list):
     # function checks to make sure there is an item in the list to be removed
-    if state_list:          
+    if state_list:
         state_list.remove(key)
 
 if __name__ == '__main__':
-    try:
-        main()
-    finally:
-        GPIO.cleanup() # Clean up GPIO on exit
+    driver.run(WinScreen(Score(0,0,[])))
