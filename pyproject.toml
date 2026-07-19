@@ -5,3 +5,8 @@ requires-python = ">=3.9"
 dependencies = [
     "pygame>=2.5",
 ]
+
+[dependency-groups]
+dev = [
+    "types-rpi-gpio>=0.7.0.20250801",
+]

@@ -15,6 +15,13 @@ import pygame
 from hardware import SIMULATOR, GPIO, buttons_in_order
 from common import Input, GetReadyScreen
 
+# Only ever used in the simulator-only helpers below. Importing it unconditionally
+# (rather than through the same `GPIO` name hardware.py picks based on SIMULATOR)
+# keeps its sim-only extras -- set_input_state/get_output_state, not part of the
+# real RPi.GPIO interface -- out of hardware.py's GPIO type, which a type checker
+# would otherwise see as a union of both possible backends at every call site.
+import sim_gpio
+
 import menu
 
 # The real device is a small touchscreen run fullscreen at whatever resolution
@@ -51,7 +58,7 @@ def _update_simulated_input(button_rects):
 
     for i, button in enumerate(buttons_in_order):
         pressed = (mouse_down and button_rects[i].collidepoint(mouse_pos)) or keys_down[_BUTTON_KEYS[i]]
-        GPIO.set_input_state(button.switch_pin, pressed)
+        sim_gpio.set_input_state(button.switch_pin, pressed)
 
 
 def _draw_simulator_chrome(window, device_surface, button_rects):
@@ -61,7 +68,7 @@ def _draw_simulator_chrome(window, device_surface, button_rects):
 
     for i, button in enumerate(buttons_in_order):
         rect = button_rects[i]
-        lit = GPIO.get_output_state(button.led_pin)
+        lit = sim_gpio.get_output_state(button.led_pin)
         color = button.rgb.to_tuple() if lit else tuple(c // 3 for c in button.rgb.to_tuple())
 
         pygame.draw.rect(window, color, rect, border_radius=10)

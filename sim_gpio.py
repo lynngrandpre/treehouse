@@ -5,10 +5,13 @@ relies on, backed by in-memory pin state instead of real hardware. Games never
 import this directly -- hardware.py picks it or the real RPi.GPIO based on mode.
 """
 
-BCM = "BCM"
-OUT = "OUT"
-IN = "IN"
-PUD_UP = "PUD_UP"
+# Matching RPi.GPIO's actual constant values (not just names) so a type checker,
+# which sees `GPIO` as a union of this module and the real one, doesn't flag a
+# mismatch at call sites like GPIO.setmode(GPIO.BCM).
+BCM = 11
+OUT = 0
+IN = 1
+PUD_UP = 22
 HIGH = 1
 LOW = 0
 
