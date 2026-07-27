@@ -76,8 +76,16 @@ def _draw_feedback(surface: pygame.Surface, feedback: Feedback, top_left: tuple[
 @dataclass
 class MastermindResultScreen:
     secret: list[Color]
-    attempts: int
+    history: list[tuple[list[Color], Feedback]]
     won: bool
+    # Starts unarmed: the White (or Red) press that got us here is often still
+    # held on the very first frame we're drawn, and we don't want that same
+    # press to instantly bounce back to the menu. Require a release first.
+    ready: bool = False
+
+    @property
+    def attempts(self) -> int:
+        return len(self.history)
 
     def _message(self) -> str:
         if not self.won:
@@ -94,18 +102,35 @@ class MastermindResultScreen:
             return "Cutting it close!"
 
     def draw(self, surface: pygame.Surface) -> None:
-        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+        CANVAS_WIDTH, _ = surface.get_size()
         headline = "You Win!" if self.won else "You Lose :("
-        draw_text(surface, font(60), headline, (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2 - 60))
-        draw_text(surface, font(40), self._message(), (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 2))
-        _draw_pegs(surface, self.secret, (CANVAS_WIDTH // 2 - 100, CANVAS_HEIGHT // 2 + 40), slot_size=40)
+        draw_text(surface, font(28), f"{headline}  {self._message()}", (CANVAS_WIDTH // 2, 22))
+
+        row_height = 38
+        top = 50
+        for i, (guess, feedback) in enumerate(self.history):
+            y = top + i * row_height
+            _draw_pegs(surface, guess, (30, y), slot_size=28)
+            _draw_feedback(surface, feedback, (CANVAS_WIDTH // 2, y + 2), dot_size=10)
+
+        if not self.won:
+            y = top + len(self.history) * row_height
+            draw_text(surface, font(20), "Answer:", (CANVAS_WIDTH // 2 - 110, y + 14))
+            _draw_pegs(surface, self.secret, (CANVAS_WIDTH // 2 - 20, y), slot_size=28)
 
     def next_state(self, input: Input) -> State | None:
-        pressed_buttons = [button for button in input.buttons if button.is_pressed()]
-        if len(pressed_buttons) > 0 or big_red_button_pressed():
+        if big_red_button_pressed():
             return None  # back to the menu
-        else:
+
+        any_pressed = any(button.is_pressed() for button in input.buttons)
+        if not any_pressed:
+            # Buttons released -- arm the next press.
+            return self if self.ready else replace(self, ready=True)
+        if not self.ready:
+            # Still the confirm press that got us here; wait for it to release.
             return self
+
+        return None  # a fresh press after that -- back to the menu
 
 
 @dataclass
@@ -148,7 +173,11 @@ class GuessEntryState:
 
         color = _pressed_color(input)
         if color is None:
-            return replace(self, ready=False)
+            # Ambiguous read (e.g. switch bounce momentarily showing two
+            # buttons held) -- leave `ready` alone and wait for a clean single
+            # press, the same way MenuState/AnswerPicker.selection() do rather
+            # than locking out the press that's still in progress.
+            return self
 
         if len(self.current_guess) < CODE_LENGTH:
             return replace(self, current_guess=self.current_guess + [color], ready=False)
@@ -158,9 +187,9 @@ class GuessEntryState:
             feedback = score_guess(self.secret, self.current_guess)
             new_history = self.history + [(self.current_guess, feedback)]
             if feedback.black == CODE_LENGTH:
-                return MastermindResultScreen(self.secret, attempts=len(new_history), won=True)
+                return MastermindResultScreen(self.secret, new_history, won=True)
             if len(new_history) >= MAX_ATTEMPTS:
-                return MastermindResultScreen(self.secret, attempts=len(new_history), won=False)
+                return MastermindResultScreen(self.secret, new_history, won=False)
             return GuessEntryState(self.secret, history=new_history, current_guess=[], ready=False)
         elif color == Color.RED:
             return replace(self, current_guess=[], ready=False)

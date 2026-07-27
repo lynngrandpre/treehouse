@@ -7,10 +7,10 @@ conftest.py sets SIMULATOR=1, so hardware.buttons_in_order are wired to sim_gpio
 and set_input_state below is the same hook the driver's mouse/keyboard handling
 uses to press them."""
 
+import menu
 import sim_gpio
 from common import GetReadyScreen, Input
 from hardware import buttons_in_order
-import menu
 from menu import MenuState
 from quiz.game import AskingQuestionState
 
@@ -49,7 +49,9 @@ def test_roster_is_paginated():
 
 
 def test_first_page_shows_three_games_between_arrows():
-    assert options(MenuState()) == ["<", "Color Easy", "Color Medium", "Color Hard", ">"]
+    # Page 0: no previous page, so the left arrow slot is blank rather than a
+    # live "<" (mirrors the hide-on-last-page behavior for the right arrow).
+    assert options(MenuState()) == ["", "Color Easy", "Color Medium", "Color Hard", ">"]
 
 
 def test_next_advances_exactly_one_page():

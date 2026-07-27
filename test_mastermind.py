@@ -7,7 +7,12 @@ from typing import Any
 import sim_gpio
 from common import Input
 from hardware import BIG_RED_BUTTON_PIN, Color, buttons_in_order
-from mastermind.game import Feedback, GuessEntryState, MastermindResultScreen, score_guess
+from mastermind.game import (
+    Feedback,
+    GuessEntryState,
+    MastermindResultScreen,
+    score_guess,
+)
 
 
 def press(*indices: int) -> Input:
@@ -118,7 +123,18 @@ def test_big_red_button_returns_to_menu_mid_entry():
     assert result is None
 
 
-def test_result_screen_any_press_returns_to_menu():
-    state = MastermindResultScreen(secret=[Color.RED, Color.RED, Color.RED, Color.RED], attempts=3, won=True)
-    assert state.next_state(release()) is state
-    assert state.next_state(press(RED)) is None
+def test_result_screen_ignores_the_confirm_press_still_held_then_exits_on_the_next_one():
+    state = MastermindResultScreen(secret=[Color.RED, Color.RED, Color.RED, Color.RED], history=[], won=True)
+    # The White press that produced this screen is often still held on the very
+    # first frame -- that must NOT immediately bounce back to the menu.
+    still_held = state.next_state(press(WHITE))
+    assert isinstance(still_held, MastermindResultScreen)
+    # Only once it's released, and a fresh press follows, do we leave.
+    armed = still_held.next_state(release())
+    assert isinstance(armed, MastermindResultScreen)
+    assert armed.next_state(press(RED)) is None
+
+
+def test_result_screen_stays_up_while_untouched():
+    state = MastermindResultScreen(secret=[Color.RED, Color.RED, Color.RED, Color.RED], history=[], won=True)
+    assert isinstance(state.next_state(release()), MastermindResultScreen)

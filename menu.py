@@ -10,11 +10,10 @@ from dataclasses import dataclass, replace
 
 import pygame
 
-from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, font
-
 import color_game
 import mastermind
 import quiz
+from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, font
 
 GAMES_PER_PAGE = 3
 
