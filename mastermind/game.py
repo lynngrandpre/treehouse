@@ -143,21 +143,29 @@ class GuessEntryState:
     ready: bool = True
 
     def draw(self, surface: pygame.Surface) -> None:
-        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
-        draw_text(surface, font(35), "Crack the Code", (CANVAS_WIDTH // 2, 30))
+        CANVAS_WIDTH, _ = surface.get_size()
+        draw_text(surface, font(22), "Crack the Code", (CANVAS_WIDTH // 2, 14))
 
-        row_height = 45
-        top = 60
-        for i, (guess, feedback) in enumerate(self.history):
+        row_height = 44
+        top = 30
+        slot_size = 30
+
+        # All MAX_ATTEMPTS rows are drawn every frame -- filled in as history,
+        # active as the current guess, or empty pegs for attempts not yet
+        # used -- so the player can see how many guesses they have left, like
+        # the pre-printed rows on the physical board.
+        for i in range(MAX_ATTEMPTS):
             y = top + i * row_height
-            _draw_pegs(surface, guess, (30, y), slot_size=32)
-            _draw_feedback(surface, feedback, (CANVAS_WIDTH // 2, y + 4))
-
-        current_y = top + len(self.history) * row_height
-        _draw_pegs(surface, self.current_guess, (30, current_y), slot_size=32)
-
-        if len(self.current_guess) >= CODE_LENGTH:
-            draw_text(surface, font(25), "White = submit, Red = clear", (CANVAS_WIDTH // 2, CANVAS_HEIGHT - 30))
+            if i < len(self.history):
+                guess, feedback = self.history[i]
+                _draw_pegs(surface, guess, (30, y), slot_size=slot_size)
+                _draw_feedback(surface, feedback, (CANVAS_WIDTH // 2, y + 3), dot_size=10)
+            elif i == len(self.history):
+                _draw_pegs(surface, self.current_guess, (30, y), slot_size=slot_size)
+                if len(self.current_guess) >= CODE_LENGTH:
+                    draw_text(surface, font(16), "White=submit  Red=clear", (CANVAS_WIDTH - 130, y + slot_size // 2))
+            else:
+                _draw_pegs(surface, [], (30, y), slot_size=slot_size)
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
