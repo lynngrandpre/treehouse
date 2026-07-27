@@ -23,6 +23,20 @@ CODE_LENGTH = 4
 # Left to right, matching buttons_in_order / the physical layout.
 COLORS_IN_ORDER = [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.WHITE]
 
+# One per possible attempt count (index 0 = solved in 1 try), shown on a win.
+WIN_MESSAGES = [
+    "Psychic?! Nailed it in ONE.",
+    "Two tries. Show-off.",
+    "Certified code-cracking genius!",
+    "Impressive! Sherlock's taking notes.",
+    "Smooth moves, super sleuth!",
+    "Solid work getting there!",
+    "You wrestled it down. Nice!",
+    "Phew, that one fought back!",
+    "Down to the wire, nail-biter!",
+    "By the skin of your teeth -- but a win's a win!",
+]
+
 
 @dataclass(frozen=True)
 class Feedback:
@@ -90,16 +104,7 @@ class MastermindResultScreen:
     def _message(self) -> str:
         if not self.won:
             return "Maybe stay in school"
-        elif self.attempts <= 2:
-            return "Genius!"
-        elif self.attempts <= 4:
-            return "Impressive!"
-        elif self.attempts <= 6:
-            return "Great job!"
-        elif self.attempts <= 8:
-            return "Phew, nice one!"
-        else:
-            return "Cutting it close!"
+        return WIN_MESSAGES[self.attempts - 1]
 
     def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, _ = surface.get_size()
