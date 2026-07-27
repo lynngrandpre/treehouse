@@ -13,11 +13,12 @@ import pygame
 from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, font
 
 import color_game
+import mastermind
 import quiz
 
 GAMES_PER_PAGE = 3
 
-all_games = color_game.games + quiz.games
+all_games = color_game.games + quiz.games + mastermind.games
 
 
 @dataclass
