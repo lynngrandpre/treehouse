@@ -118,6 +118,9 @@ class MastermindResultScreen:
             draw_text(surface, font(24), "Answer:", (CANVAS_WIDTH // 2 - 110, y + 14))
             _draw_pegs(surface, self.secret, (CANVAS_WIDTH // 2 - 20, y), slot_size=28)
 
+        draw_text(surface, font(22), "Green: Play Again", (620, 220))
+        draw_text(surface, font(22), "Red: Main Menu", (620, 252))
+
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
             return None  # back to the menu
@@ -130,7 +133,16 @@ class MastermindResultScreen:
             # Still the confirm press that got us here; wait for it to release.
             return self
 
-        return None  # a fresh press after that -- back to the menu
+        if buttons[Color.GREEN].is_pressed():
+            # Debounce this Green press on the new game the same way a fresh
+            # GuessEntryState normally does when it isn't the very first
+            # screen shown -- otherwise it'd be read as this game's first peg.
+            return GuessEntryState(secret=random_secret(), ready=False)
+        if buttons[Color.RED].is_pressed():
+            return None  # back to the menu
+
+        # Any other button: message stays up, keep waiting for Green or Red.
+        return self
 
 
 @dataclass

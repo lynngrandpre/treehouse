@@ -138,3 +138,16 @@ def test_result_screen_ignores_the_confirm_press_still_held_then_exits_on_the_ne
 def test_result_screen_stays_up_while_untouched():
     state = MastermindResultScreen(secret=[Color.RED, Color.RED, Color.RED, Color.RED], history=[], won=True)
     assert isinstance(state.next_state(release()), MastermindResultScreen)
+
+
+def test_result_screen_green_starts_a_new_game():
+    state = MastermindResultScreen(secret=[Color.RED, Color.RED, Color.RED, Color.RED], history=[], won=True, ready=True)
+    new_state = state.next_state(press(GREEN))
+    assert isinstance(new_state, GuessEntryState)
+    assert new_state.current_guess == []
+    assert new_state.history == []
+
+
+def test_result_screen_ignores_other_buttons():
+    state = MastermindResultScreen(secret=[Color.RED, Color.RED, Color.RED, Color.RED], history=[], won=True, ready=True)
+    assert isinstance(state.next_state(press(BLUE)), MastermindResultScreen)
