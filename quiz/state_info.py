@@ -1,4 +1,21 @@
-state_info = {
+from __future__ import annotations
+
+from typing import TypedDict
+
+
+class SportsTeam(TypedDict):
+    sport: str
+    name: str
+
+
+class StateInfo(TypedDict):
+    capital: str
+    large_cities: list[str]
+    sports_teams: list[SportsTeam]
+    neighbors: list[str]
+
+
+state_info: dict[str, StateInfo] = {
   "Alabama": {
     "capital": "Montgomery",
     "large_cities": ["Birmingham", "Montgomery", "Mobile", "Huntsville", "Tuscaloosa"],

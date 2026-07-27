@@ -1,8 +1,23 @@
-# Treehouse
+# Running
 
-A physical trivia/game console running on a Raspberry Pi, driven by GPIO buttons (`state_game.py`).
+On the Pi: `uv run driver.py`
+Simulator: `uv run driver.py --simulator`
 
-## Running it
+# Editing
+
+Linter: `uvx ruff check`
+Typecheck: `uvx ty check`
+Test: `uvx run pytest`
+
+# Structure
+
+New games should be place in their own directory. They should expose a list of games in `__init__.py`, and that list should be imported from menu.py
+
+Ideally, every game should be written in the "state machine style" of quiz. For more continuous games, you can do something like color_game - just one state that always returns itself.
+
+Returning None from next_state will yield control back to the menu, and allow the player to pick a new game.
+
+# Deployment (this Pi)
 
 The game runs as a systemd **user** service, not an ad-hoc background process:
 
@@ -13,7 +28,7 @@ systemctl --user stop treehouse
 journalctl --user -u treehouse -f   # logs
 ```
 
-Unit file: `~/.config/systemd/user/treehouse.service`. It runs `python3 state_game.py` from this directory, with `Restart=on-failure` so a crash auto-recovers.
+Unit file: `~/.config/systemd/user/treehouse.service`. It runs `uv run driver.py` from this directory, with `Restart=on-failure` so a crash auto-recovers.
 
 ## NanoClaw agent (Telegram)
 

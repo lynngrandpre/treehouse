@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=State Game
-Exec=/usr/bin/python3 /home/tarzan/treehouse/state_game.py
+Exec=/usr/bin/python3 /home/tarzan/treehouse/driver.py
 Comment=Starts the State Game on boot
 Terminal=false
 Hidden=false

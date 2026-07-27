@@ -1,0 +1,26 @@
+[project]
+name = "treehouse"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "pygame>=2.5",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "ruff>=0.15.22",
+    "types-rpi-gpio>=0.7.0.20250801",
+]
+
+[tool.ruff.lint]
+# flake8-annotations: flag missing type annotations on function args/returns.
+# ANN401 (disallows explicit `Any`) is excluded -- that's about annotations
+# being too loose, not missing, which is a different ask.
+extend-select = ["ANN"]
+ignore = ["ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test functions don't need return-type annotations to document their intent.
+"test_*.py" = ["ANN201", "ANN202"]
+"conftest.py" = ["ANN201", "ANN202"]
