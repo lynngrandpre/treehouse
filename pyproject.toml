@@ -4,6 +4,11 @@ version = "0.1.0"
 requires-python = ">=3.9"
 dependencies = [
     "pygame>=2.5",
+    # Only installable/importable on real Pi hardware -- the simulator path
+    # (hardware.py) never imports this, but `uv sync` still needs it scoped
+    # out so a laptop dev environment (--simulator only) doesn't try to
+    # build it.
+    "RPi.GPIO>=0.7; sys_platform == 'linux' and platform_machine == 'aarch64'",
 ]
 
 [dependency-groups]
