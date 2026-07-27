@@ -13,12 +13,13 @@ import pygame
 import chain
 import color_game
 import mastermind
+import pacman
 import quiz
 from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, font
 
 GAMES_PER_PAGE = 3
 
-all_games = color_game.games + quiz.games + mastermind.games + chain.games
+all_games = color_game.games + quiz.games + mastermind.games + chain.games + pacman.games
 
 
 @dataclass

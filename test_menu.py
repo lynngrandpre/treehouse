@@ -40,11 +40,12 @@ def click(state: MenuState, index: int) -> MenuState:
     return released
 
 
-# These tests assume nine games across three pages of three. If the roster
-# changes so the menu stops paginating, that's a different design and these
-# pagination tests should be revisited.
+# These tests assume ten games across four pages of three (the last page
+# holds just the leftover one). If the roster changes so the menu stops
+# paginating, that's a different design and these pagination tests should be
+# revisited.
 def test_roster_is_paginated():
-    assert len(menu.all_games) == 9
+    assert len(menu.all_games) == 10
     assert MenuState()._paginated()
 
 
@@ -62,19 +63,25 @@ def test_next_advances_exactly_one_page():
     assert options(page1) == ["<", "Capitals HARD", "Capitals", "Sports", ">"]
 
 
-def test_next_twice_reaches_last_page():
+def test_next_twice_reaches_third_page():
     state = click(click(MenuState(), 4), 4)
     assert state.page == 2
-    # Last page: no further games, so the right arrow slot is blank rather
-    # than a live ">" (was previously wrong here -- a stale assertion from
-    # before Mastermind, which didn't match menu.py's own hide-when-last-page
-    # logic).
-    assert options(state) == ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ""]
+    # Not the last page anymore (Pac-Duo spills onto a fourth), so the right
+    # arrow is still live here.
+    assert options(state) == ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ">"]
+
+
+def test_next_three_times_reaches_the_last_page():
+    state = click(click(click(MenuState(), 4), 4), 4)
+    assert state.page == 3
+    # Last page holds just the one leftover game, so the right arrow slot is
+    # blank rather than a live ">".
+    assert options(state) == ["<", "Pac-Duo", ""]
 
 
 def test_next_clamps_on_last_page():
-    state = click(click(click(MenuState(), 4), 4), 4)
-    assert state.page == 2
+    state = click(click(click(click(MenuState(), 4), 4), 4), 4)
+    assert state.page == 3
 
 
 def test_prev_goes_back_and_clamps_at_zero():
