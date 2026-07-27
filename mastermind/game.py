@@ -110,8 +110,8 @@ class MastermindResultScreen:
         top = 52
         for i, (guess, feedback) in enumerate(self.history):
             y = top + i * row_height
-            _draw_pegs(surface, guess, (30, y), slot_size=28)
-            _draw_feedback(surface, feedback, (190, y + 2), dot_size=14)
+            _draw_pegs(surface, guess, (217, y), slot_size=28)
+            _draw_feedback(surface, feedback, (377, y + 2), dot_size=14)
 
         if not self.won:
             y = top + len(self.history) * row_height
@@ -158,14 +158,14 @@ class GuessEntryState:
             y = top + i * row_height
             if i < len(self.history):
                 guess, feedback = self.history[i]
-                _draw_pegs(surface, guess, (30, y), slot_size=slot_size)
-                _draw_feedback(surface, feedback, (200, y + 3), dot_size=16)
+                _draw_pegs(surface, guess, (217, y), slot_size=slot_size)
+                _draw_feedback(surface, feedback, (387, y + 3), dot_size=16)
             elif i == len(self.history):
-                _draw_pegs(surface, self.current_guess, (30, y), slot_size=slot_size)
+                _draw_pegs(surface, self.current_guess, (217, y), slot_size=slot_size)
                 if len(self.current_guess) >= CODE_LENGTH:
                     draw_text(surface, font(18), "White=submit  Red=clear", (CANVAS_WIDTH - 145, y + slot_size // 2))
             else:
-                _draw_pegs(surface, [], (30, y), slot_size=slot_size)
+                _draw_pegs(surface, [], (217, y), slot_size=slot_size)
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
