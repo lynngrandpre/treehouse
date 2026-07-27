@@ -1,0 +1,257 @@
+"""Breakout: a solo paddle-and-ball game. Red/Yellow slide the paddle left and
+right; the ball bounces on its own off the walls, the paddle, and the bricks.
+Clear every brick to win; let the ball fall past the paddle three times and
+the game is over.
+
+A single continuous state that mutates and returns itself every frame, in the
+"continuous game" style described in the README (see color_game) -- the
+paddle, ball, and brick grid are all shared mutable state ticking forward in
+real time, rather than the discrete state-machine style of quiz/mastermind.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
+
+import pygame
+
+from common import Input, State, draw_text, font
+from hardware import Color, big_red_button_pressed, buttons
+
+CANVAS_WIDTH = 800
+CANVAS_HEIGHT = 480
+HUD_HEIGHT = 40
+
+BRICK_ROWS = 5
+BRICK_COLS = 10
+BRICK_WIDTH = 70
+BRICK_HEIGHT = 22
+BRICK_GAP = 6
+BRICK_TOP = HUD_HEIGHT + 10
+BRICK_LEFT = (CANVAS_WIDTH - (BRICK_COLS * BRICK_WIDTH + (BRICK_COLS - 1) * BRICK_GAP)) // 2
+ROW_COLORS = [(230, 60, 60), (230, 140, 50), (230, 210, 50), (70, 200, 90), (70, 150, 230)]
+
+PADDLE_WIDTH = 100
+PADDLE_HEIGHT = 14
+PADDLE_Y = CANVAS_HEIGHT - 40
+PADDLE_SPEED = 480  # pixels per second
+
+BALL_RADIUS = 8
+INITIAL_BALL_VX = 150
+INITIAL_BALL_VY = -260
+MAX_BALL_VX = 300  # how much paddle-edge hits can redirect the ball sideways
+
+STARTING_LIVES = 3
+
+WIN_MESSAGE = "Every brick cleared -- nice shooting!"
+
+
+def _new_bricks() -> list[list[bool]]:
+    return [[True] * BRICK_COLS for _ in range(BRICK_ROWS)]
+
+
+def _brick_rect(row: int, col: int) -> pygame.Rect:
+    x = BRICK_LEFT + col * (BRICK_WIDTH + BRICK_GAP)
+    y = BRICK_TOP + row * (BRICK_HEIGHT + BRICK_GAP)
+    return pygame.Rect(x, y, BRICK_WIDTH, BRICK_HEIGHT)
+
+
+def _served_ball(paddle_x: float) -> tuple[float, float, float, float]:
+    """Ball position/velocity for a fresh serve, resting just above the
+    paddle's current position."""
+    ball_x = paddle_x + PADDLE_WIDTH / 2
+    ball_y = PADDLE_Y - BALL_RADIUS - 1
+    return ball_x, ball_y, float(INITIAL_BALL_VX), float(INITIAL_BALL_VY)
+
+
+@dataclass
+class BreakoutState:
+    paddle_x: float
+    ball_x: float
+    ball_y: float
+    ball_vx: float
+    ball_vy: float
+    bricks: list[list[bool]]
+    bricks_remaining: int
+    lives: int = STARTING_LIVES
+    # None only on the very first frame, before we've measured a delta -- lets
+    # the ball sit still for one frame instead of jumping however long it took
+    # to get from process start (or the rules screen) to here.
+    last_update_time: int | None = None
+
+    def draw(self, surface: pygame.Surface) -> None:
+        surface.fill((10, 10, 25))
+        white = (255, 255, 255)
+        draw_text(surface, font(20), f"Lives: {self.lives}   Bricks: {self.bricks_remaining}", (110, 20), white)
+
+        for row in range(BRICK_ROWS):
+            for col in range(BRICK_COLS):
+                if self.bricks[row][col]:
+                    pygame.draw.rect(surface, ROW_COLORS[row % len(ROW_COLORS)], _brick_rect(row, col))
+
+        pygame.draw.rect(surface, white, (self.paddle_x, PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT))
+        pygame.draw.circle(surface, white, (round(self.ball_x), round(self.ball_y)), BALL_RADIUS)
+
+    def _lose_a_life(self) -> State | None:
+        self.lives -= 1
+        if self.lives <= 0:
+            return BreakoutResultScreen(won=False)
+        self.ball_x, self.ball_y, self.ball_vx, self.ball_vy = _served_ball(self.paddle_x)
+        return self
+
+    def next_state(self, input: Input) -> State | None:
+        if big_red_button_pressed():
+            return None  # back to the menu
+
+        current_time = input.current_time
+        if self.last_update_time is None:
+            self.last_update_time = current_time
+            return self
+        dt = max(0, current_time - self.last_update_time) / 1000.0
+        self.last_update_time = current_time
+
+        dx = (1 if buttons[Color.YELLOW].is_pressed() else 0) - (1 if buttons[Color.RED].is_pressed() else 0)
+        self.paddle_x = min(max(self.paddle_x + dx * PADDLE_SPEED * dt, 0), CANVAS_WIDTH - PADDLE_WIDTH)
+
+        self.ball_x += self.ball_vx * dt
+        self.ball_y += self.ball_vy * dt
+
+        if self.ball_x <= BALL_RADIUS:
+            self.ball_x = BALL_RADIUS
+            self.ball_vx = abs(self.ball_vx)
+        elif self.ball_x >= CANVAS_WIDTH - BALL_RADIUS:
+            self.ball_x = CANVAS_WIDTH - BALL_RADIUS
+            self.ball_vx = -abs(self.ball_vx)
+
+        if self.ball_y <= HUD_HEIGHT + BALL_RADIUS:
+            self.ball_y = HUD_HEIGHT + BALL_RADIUS
+            self.ball_vy = abs(self.ball_vy)
+
+        if (
+            self.ball_vy > 0
+            and self.ball_y + BALL_RADIUS >= PADDLE_Y
+            and self.ball_y + BALL_RADIUS <= PADDLE_Y + PADDLE_HEIGHT
+            and self.paddle_x - BALL_RADIUS <= self.ball_x <= self.paddle_x + PADDLE_WIDTH + BALL_RADIUS
+        ):
+            self.ball_y = PADDLE_Y - BALL_RADIUS
+            offset = (self.ball_x - (self.paddle_x + PADDLE_WIDTH / 2)) / (PADDLE_WIDTH / 2)
+            self.ball_vx = max(-1.0, min(1.0, offset)) * MAX_BALL_VX
+            self.ball_vy = -abs(self.ball_vy)
+
+        ball_rect = pygame.Rect(self.ball_x - BALL_RADIUS, self.ball_y - BALL_RADIUS, BALL_RADIUS * 2, BALL_RADIUS * 2)
+        for row in range(BRICK_ROWS):
+            for col in range(BRICK_COLS):
+                if not self.bricks[row][col]:
+                    continue
+                if ball_rect.colliderect(_brick_rect(row, col)):
+                    self.bricks[row][col] = False
+                    self.bricks_remaining -= 1
+                    self.ball_vy = -self.ball_vy
+                    break
+            else:
+                continue
+            break
+
+        if self.bricks_remaining <= 0:
+            return BreakoutResultScreen(won=True)
+
+        if self.ball_y - BALL_RADIUS > CANVAS_HEIGHT:
+            return self._lose_a_life()
+
+        return self
+
+
+@dataclass
+class RulesScreen:
+    """Shown once, before the ball starts moving, so the player knows the
+    controls before they're standing at the box. "Play Again" from the result
+    screen skips straight back into a fresh game rather than re-showing this.
+    """
+
+    ready: bool = True
+
+    def draw(self, surface: pygame.Surface) -> None:
+        surface.fill((10, 10, 25))
+        white = (255, 255, 255)
+        draw_text(surface, font(48), "Breakout", (CANVAS_WIDTH // 2, 50), white)
+
+        lines = [
+            ("Red = paddle left, Yellow = paddle right", white),
+            ("The ball bounces on its own -- keep it in play.", white),
+            ("Clear every brick to win.", white),
+            (f"Miss the ball {STARTING_LIVES} times and it's game over.", white),
+        ]
+        y = 150
+        for text, color in lines:
+            draw_text(surface, font(30), text, (CANVAS_WIDTH // 2, y), color)
+            y += 48
+
+        draw_text(surface, font(30), "Press any button to continue", (CANVAS_WIDTH // 2, y + 20), white)
+
+    def next_state(self, input: Input) -> State | None:
+        if big_red_button_pressed():
+            return None  # back to the menu
+
+        any_pressed = any(button.is_pressed() for button in input.buttons)
+        if not any_pressed:
+            return self if self.ready else replace(self, ready=True)
+        if not self.ready:
+            return self
+
+        return new_breakout()
+
+
+@dataclass
+class BreakoutResultScreen:
+    won: bool
+    # Starts unarmed: the press (or the falling ball) that got us here may
+    # still have a button held on the very first frame we're drawn. Require a
+    # release first, same as the other games' result screens.
+    ready: bool = False
+
+    def _message(self) -> str:
+        return WIN_MESSAGE if self.won else "Out of lives -- the bricks win this round."
+
+    def draw(self, surface: pygame.Surface) -> None:
+        surface.fill((10, 10, 25))
+        white = (255, 255, 255)
+        headline = "You Win!" if self.won else "Game Over"
+        draw_text(surface, font(40), headline, (CANVAS_WIDTH // 2, 90), white)
+        draw_text(surface, font(26), self._message(), (CANVAS_WIDTH // 2, 150), white)
+        draw_text(surface, font(26), "Green: Play Again", (CANVAS_WIDTH // 2, 260), white)
+        draw_text(surface, font(26), "Red: Main Menu", (CANVAS_WIDTH // 2, 300), white)
+
+    def next_state(self, input: Input) -> State | None:
+        if big_red_button_pressed():
+            return None  # back to the menu
+
+        any_pressed = any(button.is_pressed() for button in input.buttons)
+        if not any_pressed:
+            return self if self.ready else replace(self, ready=True)
+        if not self.ready:
+            return self
+
+        if buttons[Color.GREEN].is_pressed():
+            return new_breakout()
+        if buttons[Color.RED].is_pressed():
+            return None  # back to the menu
+
+        return self
+
+
+def new_breakout() -> BreakoutState:
+    paddle_x = (CANVAS_WIDTH - PADDLE_WIDTH) / 2
+    ball_x, ball_y, ball_vx, ball_vy = _served_ball(paddle_x)
+    return BreakoutState(
+        paddle_x=paddle_x,
+        ball_x=ball_x,
+        ball_y=ball_y,
+        ball_vx=ball_vx,
+        ball_vy=ball_vy,
+        bricks=_new_bricks(),
+        bricks_remaining=BRICK_ROWS * BRICK_COLS,
+    )
+
+
+def new_breakout_with_rules() -> RulesScreen:
+    return RulesScreen()

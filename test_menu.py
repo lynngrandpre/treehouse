@@ -40,12 +40,12 @@ def click(state: MenuState, index: int) -> MenuState:
     return released
 
 
-# These tests assume twelve games across four pages of three (the last page
-# holds the three leftover ones). If the roster changes so the menu stops
+# These tests assume thirteen games across five pages of three (the last page
+# holds the one leftover game). If the roster changes so the menu stops
 # paginating, that's a different design and these pagination tests should be
 # revisited.
 def test_roster_is_paginated():
-    assert len(menu.all_games) == 12
+    assert len(menu.all_games) == 13
     assert MenuState()._paginated()
 
 
@@ -71,17 +71,25 @@ def test_next_twice_reaches_third_page():
     assert options(state) == ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ">"]
 
 
-def test_next_three_times_reaches_the_last_page():
+def test_next_three_times_reaches_page_three():
     state = click(click(click(MenuState(), 4), 4), 4)
     assert state.page == 3
-    # Last page holds the three leftover games, so the right arrow slot is
-    # blank rather than a live ">".
-    assert options(state) == ["<", "Pac-Duo Easy", "Pac-Duo", "Vault Escape", ""]
+    # Not the last page anymore (Breakout spills onto a fifth), so the right
+    # arrow is still live here.
+    assert options(state) == ["<", "Pac-Duo Easy", "Pac-Duo", "Vault Escape", ">"]
+
+
+def test_next_four_times_reaches_the_last_page():
+    state = click(click(click(click(MenuState(), 4), 4), 4), 4)
+    assert state.page == 4
+    # Last page holds the one leftover game, so the right arrow slot is blank
+    # rather than a live ">", and there's no third game slot to fill either.
+    assert options(state) == ["<", "Breakout", ""]
 
 
 def test_next_clamps_on_last_page():
-    state = click(click(click(click(MenuState(), 4), 4), 4), 4)
-    assert state.page == 3
+    state = click(click(click(click(click(MenuState(), 4), 4), 4), 4), 4)
+    assert state.page == 4
 
 
 def test_prev_goes_back_and_clamps_at_zero():
