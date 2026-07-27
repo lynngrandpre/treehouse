@@ -40,11 +40,11 @@ def click(state: MenuState, index: int) -> MenuState:
     return released
 
 
-# These tests assume eight games across three pages of three. If the roster
+# These tests assume nine games across three pages of three. If the roster
 # changes so the menu stops paginating, that's a different design and these
 # pagination tests should be revisited.
 def test_roster_is_paginated():
-    assert len(menu.all_games) == 8
+    assert len(menu.all_games) == 9
     assert MenuState()._paginated()
 
 
@@ -69,7 +69,7 @@ def test_next_twice_reaches_last_page():
     # than a live ">" (was previously wrong here -- a stale assertion from
     # before Mastermind, which didn't match menu.py's own hide-when-last-page
     # logic).
-    assert options(state) == ["<", "Jeopardy!", "Mastermind", ""]
+    assert options(state) == ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ""]
 
 
 def test_next_clamps_on_last_page():

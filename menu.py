@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace
 
 import pygame
 
+import chain
 import color_game
 import mastermind
 import quiz
@@ -17,7 +18,7 @@ from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, 
 
 GAMES_PER_PAGE = 3
 
-all_games = color_game.games + quiz.games + mastermind.games
+all_games = color_game.games + quiz.games + mastermind.games + chain.games
 
 
 @dataclass
