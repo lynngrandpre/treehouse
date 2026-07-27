@@ -1,9 +1,11 @@
 """Pac-Duo: a two-player cooperative maze chase. Control of the single shared
 character is split across the two players -- Player 1 owns horizontal
-movement (Red/Yellow), Player 2 owns vertical movement (Blue/Green) -- so
-neither can cross the maze alone without the other's help. White cashes in a
-stored power pellet to scare the ghosts for a while. Clear every pellet to
-win; get caught by a ghost while not scared and the whole team loses.
+movement (Red/Green), Player 2 owns vertical movement (Blue/Yellow) -- so
+neither can cross the maze alone without the other's help. Each player's pair
+is physically adjacent (the button row is Red, Green, Blue, Yellow, White),
+with White shared off to the side to cash in a stored power pellet and scare
+the ghosts for a while. Clear every pellet to win; get caught by a ghost
+while not scared and the whole team loses.
 
 A single continuous state that mutates and returns itself every frame, in the
 "continuous game" style described in the README (see color_game), rather than
@@ -26,7 +28,7 @@ ROWS = 11
 HUD_HEIGHT = 40
 
 MOVE_INTERVAL_MS = 160
-GHOST_INTERVAL_MS = 220
+GHOST_INTERVAL_MS = 320
 SCARED_DURATION_MS = 6000
 
 WIN_MESSAGE = "Maze cleared! Flawless teamwork."
@@ -153,8 +155,12 @@ class PacDuoState:
 
         if current_time - self.last_move_time >= MOVE_INTERVAL_MS:
             self.last_move_time = current_time
-            dx = (1 if buttons[Color.YELLOW].is_pressed() else 0) - (1 if buttons[Color.RED].is_pressed() else 0)
-            dy = (1 if buttons[Color.GREEN].is_pressed() else 0) - (1 if buttons[Color.BLUE].is_pressed() else 0)
+            # Physical button order is Red, Green, Blue, Yellow, White --
+            # each player gets an adjacent pair (Red/Green, Blue/Yellow) so
+            # their two buttons sit next to each other, with White (the
+            # power-up) shared off to the side.
+            dx = (1 if buttons[Color.GREEN].is_pressed() else 0) - (1 if buttons[Color.RED].is_pressed() else 0)
+            dy = (1 if buttons[Color.YELLOW].is_pressed() else 0) - (1 if buttons[Color.BLUE].is_pressed() else 0)
             row, col = self.player_pos
             if dx and not self._blocked(row, col + dx):
                 col += dx
@@ -214,8 +220,8 @@ class RulesScreen:
 
         ghost_word = "ghost" if self.ghost_count == 1 else "ghosts"
         lines = [
-            ("Player 1: Red = Left, Yellow = Right", (255, 60, 60)),
-            ("Player 2: Blue = Up, Green = Down", (60, 130, 255)),
+            ("Player 1: Red = Left, Green = Right", (255, 60, 60)),
+            ("Player 2: Blue = Up, Yellow = Down", (60, 130, 255)),
             ("One shared character -- move together!", white),
             ("White: spend a power-up to scare the ghosts", (255, 180, 60)),
             ("Eat every dot to win.", white),

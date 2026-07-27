@@ -108,40 +108,40 @@ def test_new_pacman_starts_with_pellets_and_the_expected_layout():
     assert state.stored_powerups == 0
 
 
-def test_player_moves_right_toward_yellow():
+def test_player_moves_right_toward_green():
     state = make_state(player_pos=(2, 1))
-    result = state.next_state(held(YELLOW, current_time=MOVE_INTERVAL_MS))
+    result = state.next_state(held(GREEN, current_time=MOVE_INTERVAL_MS))
     assert result is state
     assert state.player_pos == (2, 2)
 
 
-def test_player_moves_up_toward_blue_and_down_toward_green():
+def test_player_moves_up_toward_blue_and_down_toward_yellow():
     up = make_state(player_pos=(2, 2))
     up.next_state(held(BLUE, current_time=MOVE_INTERVAL_MS))
     assert up.player_pos == (1, 2)
 
     down = make_state(player_pos=(2, 2))
-    down.next_state(held(GREEN, current_time=MOVE_INTERVAL_MS))
+    down.next_state(held(YELLOW, current_time=MOVE_INTERVAL_MS))
     assert down.player_pos == (3, 2)
 
 
 def test_player_cannot_move_through_a_wall():
     state = make_state(player_pos=(1, 1))  # already against the top-left corridor
-    state.next_state(held(BLUE, YELLOW, current_time=MOVE_INTERVAL_MS))
-    # Yellow (right) succeeds, Blue (up, blocked by the border) does not.
+    state.next_state(held(BLUE, GREEN, current_time=MOVE_INTERVAL_MS))
+    # Green (right) succeeds, Blue (up, blocked by the border) does not.
     assert state.player_pos == (1, 2)
 
 
 def test_movement_is_gated_by_the_move_interval():
     state = make_state(player_pos=(2, 2))
-    state.next_state(held(YELLOW, current_time=MOVE_INTERVAL_MS - 1))
+    state.next_state(held(GREEN, current_time=MOVE_INTERVAL_MS - 1))
     assert state.player_pos == (2, 2)  # not enough time has passed yet
 
 
 def test_moving_onto_a_pellet_eats_it():
     state = make_state(player_pos=(2, 1))
     before = state.pellets_remaining
-    state.next_state(held(YELLOW, current_time=MOVE_INTERVAL_MS))
+    state.next_state(held(GREEN, current_time=MOVE_INTERVAL_MS))
     assert state.player_pos == (2, 2)
     assert state.grid[2][2] == ' '
     assert state.pellets_remaining == before - 1
@@ -151,7 +151,7 @@ def test_moving_onto_a_power_pellet_stores_a_powerup_without_scaring():
     grid = tiny_room()
     grid[2][2] = 'o'
     state = make_state(grid=grid, player_pos=(2, 1))
-    state.next_state(held(YELLOW, current_time=MOVE_INTERVAL_MS))
+    state.next_state(held(GREEN, current_time=MOVE_INTERVAL_MS))
     assert state.grid[2][2] == ' '
     assert state.stored_powerups == 1
     assert state.scared_until == 0
