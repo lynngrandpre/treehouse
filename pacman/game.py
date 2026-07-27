@@ -69,6 +69,10 @@ class PacDuoState:
     player_pos: tuple[int, int]
     ghosts: list[Ghost]
     pellets_remaining: int
+    # How fast the ghosts step -- larger means slower, easier ghosts. Carried
+    # separately from GHOST_INTERVAL_MS so "Pac-Duo Easy" can hand in its own
+    # value.
+    ghost_interval_ms: int = GHOST_INTERVAL_MS
     last_move_time: int = 0
     last_ghost_time: int = 0
     scared_until: int = 0
@@ -166,14 +170,14 @@ class PacDuoState:
                 self.grid[row][col] = ' '
                 self.stored_powerups += 1
 
-        if current_time - self.last_ghost_time >= GHOST_INTERVAL_MS:
+        if current_time - self.last_ghost_time >= self.ghost_interval_ms:
             self.last_ghost_time = current_time
             scared = current_time < self.scared_until
             for ghost in self.ghosts:
                 self._step_ghost(ghost, scared)
 
         if self.pellets_remaining <= 0:
-            return PacDuoResultScreen(won=True)
+            return PacDuoResultScreen(won=True, ghost_count=len(self.ghosts), ghost_interval_ms=self.ghost_interval_ms)
 
         scared = current_time < self.scared_until
         for ghost in self.ghosts:
@@ -181,7 +185,9 @@ class PacDuoState:
                 if scared:
                     ghost.pos = ghost.start
                 else:
-                    return PacDuoResultScreen(won=False)
+                    return PacDuoResultScreen(
+                        won=False, ghost_count=len(self.ghosts), ghost_interval_ms=self.ghost_interval_ms,
+                    )
 
         return self
 
@@ -193,6 +199,8 @@ class RulesScreen:
     screen skips straight back into a fresh maze rather than re-showing this.
     """
 
+    ghost_count: int = 2
+    ghost_interval_ms: int = GHOST_INTERVAL_MS
     # GetReadyScreen only calls make_next_state() once every button is
     # already released, so there's no stale press to debounce here -- same
     # reasoning as EntryState/ShowSequenceState's un-pressed transitions.
@@ -204,13 +212,14 @@ class RulesScreen:
         white = (255, 255, 255)
         draw_text(surface, font(48), "Pac-Duo", (CANVAS_WIDTH // 2, 50), white)
 
+        ghost_word = "ghost" if self.ghost_count == 1 else "ghosts"
         lines = [
             ("Player 1: Red = Left, Yellow = Right", (255, 60, 60)),
             ("Player 2: Blue = Up, Green = Down", (60, 130, 255)),
             ("One shared character -- move together!", white),
             ("White: spend a power-up to scare the ghosts", (255, 180, 60)),
             ("Eat every dot to win.", white),
-            ("Caught by a ghost (not scared) = game over.", white),
+            (f"Caught by a {ghost_word} (not scared) = game over.", white),
         ]
         y = 140
         for text, color in lines:
@@ -229,12 +238,16 @@ class RulesScreen:
         if not self.ready:
             return self
 
-        return new_pacman()
+        return new_pacman(ghost_count=self.ghost_count, ghost_interval_ms=self.ghost_interval_ms)
 
 
 @dataclass
 class PacDuoResultScreen:
     won: bool
+    # Carried over from the PacDuoState that ended, so "Play Again" restarts
+    # at the same difficulty rather than resetting to normal.
+    ghost_count: int = 2
+    ghost_interval_ms: int = GHOST_INTERVAL_MS
     # Starts unarmed: the press that got us here (a movement button, or none
     # at all if a ghost walked into the player) may still be held on the very
     # first frame we're drawn. Require a release first, same as the other
@@ -267,7 +280,7 @@ class PacDuoResultScreen:
             return self
 
         if buttons[Color.GREEN].is_pressed():
-            return new_pacman()
+            return new_pacman(ghost_count=self.ghost_count, ghost_interval_ms=self.ghost_interval_ms)
         if buttons[Color.RED].is_pressed():
             return None  # back to the menu
 
@@ -275,16 +288,17 @@ class PacDuoResultScreen:
         return self
 
 
-def new_pacman() -> PacDuoState:
+def new_pacman(ghost_count: int = 2, ghost_interval_ms: int = GHOST_INTERVAL_MS) -> PacDuoState:
     grid, player_start, ghost_starts = _build_maze()
     pellets_remaining = sum(row.count('.') for row in grid)
     return PacDuoState(
         grid=grid,
         player_pos=player_start,
-        ghosts=[Ghost(pos=start, start=start) for start in ghost_starts],
+        ghosts=[Ghost(pos=start, start=start) for start in ghost_starts[:ghost_count]],
         pellets_remaining=pellets_remaining,
+        ghost_interval_ms=ghost_interval_ms,
     )
 
 
-def new_pacman_with_rules() -> RulesScreen:
-    return RulesScreen()
+def new_pacman_with_rules(ghost_count: int = 2, ghost_interval_ms: int = GHOST_INTERVAL_MS) -> RulesScreen:
+    return RulesScreen(ghost_count=ghost_count, ghost_interval_ms=ghost_interval_ms)

@@ -85,6 +85,20 @@ def test_rules_screen_big_red_button_returns_to_menu():
     assert result is None
 
 
+def test_rules_screen_carries_difficulty_into_the_maze():
+    state = RulesScreen(ghost_count=1, ghost_interval_ms=340)
+    result = state.next_state(press(BLUE))
+    assert isinstance(result, PacDuoState)
+    assert len(result.ghosts) == 1
+    assert result.ghost_interval_ms == 340
+
+
+def test_easy_pacman_has_one_slower_ghost():
+    state = new_pacman(ghost_count=1, ghost_interval_ms=340)
+    assert len(state.ghosts) == 1
+    assert state.ghost_interval_ms == 340
+
+
 def test_new_pacman_starts_with_pellets_and_the_expected_layout():
     state = new_pacman()
     assert isinstance(state, PacDuoState)
@@ -222,6 +236,26 @@ def test_result_screen_green_starts_a_new_game():
     new_state = state.next_state(press(GREEN))
     assert isinstance(new_state, PacDuoState)
     assert new_state.player_pos == (5, 10)
+
+
+def test_result_screen_green_preserves_difficulty():
+    state = PacDuoResultScreen(won=False, ghost_count=1, ghost_interval_ms=340, ready=True)
+    new_state = state.next_state(press(GREEN))
+    assert isinstance(new_state, PacDuoState)
+    assert len(new_state.ghosts) == 1
+    assert new_state.ghost_interval_ms == 340
+
+
+def test_ghost_catch_carries_difficulty_into_the_result_screen():
+    state = make_state(
+        player_pos=(1, 1),
+        ghosts=[Ghost(pos=(1, 1), start=(1, 1))],
+        ghost_interval_ms=340,
+    )
+    result = state.next_state(release())
+    assert isinstance(result, PacDuoResultScreen)
+    assert result.ghost_count == 1
+    assert result.ghost_interval_ms == 340
 
 
 def test_result_screen_ignores_other_buttons():
