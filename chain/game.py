@@ -55,12 +55,12 @@ class ChainResultScreen:
         surface.fill((10, 10, 25))
         headline = "Chain Complete!" if self.won else "Chain Broken :("
         white = (255, 255, 255)
-        draw_text(surface, font(32), headline, (CANVAS_WIDTH // 2, 60), white)
-        draw_text(surface, font(22), self._message(), (CANVAS_WIDTH // 2, 105), white)
-        draw_text(surface, font(20), f"Final chain length: {len(self.sequence)}", (CANVAS_WIDTH // 2, 145), white)
+        draw_text(surface, font(40), headline, (CANVAS_WIDTH // 2, 64), white)
+        draw_text(surface, font(28), self._message(), (CANVAS_WIDTH // 2, 116), white)
+        draw_text(surface, font(26), f"Final chain length: {len(self.sequence)}", (CANVAS_WIDTH // 2, 160), white)
 
-        draw_text(surface, font(22), "Green: Play Again", (CANVAS_WIDTH // 2, 260), white)
-        draw_text(surface, font(22), "Red: Main Menu", (CANVAS_WIDTH // 2, 292), white)
+        draw_text(surface, font(28), "Green: Play Again", (CANVAS_WIDTH // 2, 260), white)
+        draw_text(surface, font(28), "Red: Main Menu", (CANVAS_WIDTH // 2, 300), white)
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
@@ -96,14 +96,14 @@ class EntryState:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
         surface.fill((10, 10, 25))
         white = (255, 255, 255)
-        draw_text(surface, font(28), f"Player {self.turn + 1}'s turn", (CANVAS_WIDTH // 2, 30), white)
+        draw_text(surface, font(36), f"Player {self.turn + 1}'s turn", (CANVAS_WIDTH // 2, 34), white)
 
         if self.progress < len(self.sequence):
             instruction = f"Repeat the chain ({self.progress}/{len(self.sequence)})"
         else:
             instruction = "Add a new link!"
-        draw_text(surface, font(22), instruction, (CANVAS_WIDTH // 2, 70), white)
-        draw_text(surface, font(18), f"Chain length: {len(self.sequence)}", (CANVAS_WIDTH // 2, 105), white)
+        draw_text(surface, font(28), instruction, (CANVAS_WIDTH // 2, 80), white)
+        draw_text(surface, font(22), f"Chain length: {len(self.sequence)}", (CANVAS_WIDTH // 2, 118), white)
 
         # Filled dots for links already repeated correctly this turn, empty
         # slots for the rest -- never reveals colors the player hasn't proven
@@ -163,8 +163,8 @@ class ShowSequenceState:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
         surface.fill((10, 10, 25))
         white = (255, 255, 255)
-        draw_text(surface, font(28), f"Player {self.turn + 1}'s turn -- watch!", (CANVAS_WIDTH // 2, 30), white)
-        draw_text(surface, font(18), f"Chain length: {len(self.sequence)}", (CANVAS_WIDTH // 2, 65), white)
+        draw_text(surface, font(36), f"Player {self.turn + 1}'s turn -- watch!", (CANVAS_WIDTH // 2, 34), white)
+        draw_text(surface, font(22), f"Chain length: {len(self.sequence)}", (CANVAS_WIDTH // 2, 74), white)
 
         current_time = pygame.time.get_ticks()
         anchor = self.start_time if self.start_time is not None else current_time
