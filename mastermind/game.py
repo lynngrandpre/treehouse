@@ -58,7 +58,7 @@ def _draw_pegs(surface: pygame.Surface, pegs: list[Color], top_left: tuple[int, 
         pygame.draw.circle(surface, (0, 0, 0), center, slot_size // 2, 2)
 
 
-def _draw_feedback(surface: pygame.Surface, feedback: Feedback, top_left: tuple[int, int], dot_size: int = 12) -> None:
+def _draw_feedback(surface: pygame.Surface, feedback: Feedback, top_left: tuple[int, int], dot_size: int = 16) -> None:
     x, y = top_left
     dots: list[tuple[int, int, int] | None] = (
         [(0, 0, 0)] * feedback.black
@@ -104,18 +104,18 @@ class MastermindResultScreen:
     def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, _ = surface.get_size()
         headline = "You Win!" if self.won else "You Lose :("
-        draw_text(surface, font(28), f"{headline}  {self._message()}", (CANVAS_WIDTH // 2, 22))
+        draw_text(surface, font(32), f"{headline}  {self._message()}", (CANVAS_WIDTH // 2, 24))
 
         row_height = 38
-        top = 50
+        top = 52
         for i, (guess, feedback) in enumerate(self.history):
             y = top + i * row_height
             _draw_pegs(surface, guess, (30, y), slot_size=28)
-            _draw_feedback(surface, feedback, (CANVAS_WIDTH // 2, y + 2), dot_size=10)
+            _draw_feedback(surface, feedback, (CANVAS_WIDTH // 2, y + 2), dot_size=14)
 
         if not self.won:
             y = top + len(self.history) * row_height
-            draw_text(surface, font(20), "Answer:", (CANVAS_WIDTH // 2 - 110, y + 14))
+            draw_text(surface, font(24), "Answer:", (CANVAS_WIDTH // 2 - 110, y + 14))
             _draw_pegs(surface, self.secret, (CANVAS_WIDTH // 2 - 20, y), slot_size=28)
 
     def next_state(self, input: Input) -> State | None:
@@ -144,10 +144,10 @@ class GuessEntryState:
 
     def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, _ = surface.get_size()
-        draw_text(surface, font(22), "Crack the Code", (CANVAS_WIDTH // 2, 14))
+        draw_text(surface, font(26), "Crack the Code", (CANVAS_WIDTH // 2, 15))
 
         row_height = 44
-        top = 30
+        top = 32
         slot_size = 30
 
         # All MAX_ATTEMPTS rows are drawn every frame -- filled in as history,
@@ -159,11 +159,11 @@ class GuessEntryState:
             if i < len(self.history):
                 guess, feedback = self.history[i]
                 _draw_pegs(surface, guess, (30, y), slot_size=slot_size)
-                _draw_feedback(surface, feedback, (CANVAS_WIDTH // 2, y + 3), dot_size=10)
+                _draw_feedback(surface, feedback, (CANVAS_WIDTH // 2, y + 3), dot_size=16)
             elif i == len(self.history):
                 _draw_pegs(surface, self.current_guess, (30, y), slot_size=slot_size)
                 if len(self.current_guess) >= CODE_LENGTH:
-                    draw_text(surface, font(16), "White=submit  Red=clear", (CANVAS_WIDTH - 130, y + slot_size // 2))
+                    draw_text(surface, font(18), "White=submit  Red=clear", (CANVAS_WIDTH - 145, y + slot_size // 2))
             else:
                 _draw_pegs(surface, [], (30, y), slot_size=slot_size)
 
