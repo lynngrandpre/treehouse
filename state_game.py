@@ -77,6 +77,8 @@ buttons= {
 
 buttons_in_order = [buttons[c] for c in [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.WHITE]]
 
+BIG_RED_BUTTON_PIN = 21  # Big round emergency-style button, physical header pin 40
+
 
 # Set up GPIO using BCM numbering
 GPIO.setmode(GPIO.BCM)
@@ -87,6 +89,11 @@ GPIO.setmode(GPIO.BCM)
 for button in buttons.values():
     GPIO.setup(button.led_pin, GPIO.OUT)
     GPIO.setup(button.switch_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+GPIO.setup(BIG_RED_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+def big_red_button_pressed():
+    return not GPIO.input(BIG_RED_BUTTON_PIN)
 
 @dataclass
 class Input:
@@ -253,6 +260,9 @@ class RevealAnswer:
 
         
     def next_state(self, input: Input):
+        if big_red_button_pressed():
+            return WinScreen(Score(0, 0, []))
+
         pressed_buttons = [(i, button) for i, button in enumerate(input.buttons) if button.is_pressed()]
 
         if len(pressed_buttons) == 0:
@@ -290,6 +300,9 @@ class AskingQuestionState:
 
 
     def next_state(self, input: Input):
+        if big_red_button_pressed():
+            return WinScreen(Score(0, 0, []))
+
         correct = self.question.answer_picker(False).selection(input)
         if correct is None:
             return self
@@ -484,6 +497,9 @@ class ColorMixerState:
 
     def next_state(self, input: Input):
         current_time = input.current_time # Use the current_time from Input
+
+        if big_red_button_pressed():
+            return WinScreen(Score(0, 0, []))
 
         # Handle button LEDs
         for button in buttons.values():
