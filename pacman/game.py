@@ -187,6 +187,52 @@ class PacDuoState:
 
 
 @dataclass
+class RulesScreen:
+    """Shown once, before the maze starts, so both players know the split
+    controls before they're standing at the box. "Play Again" from the result
+    screen skips straight back into a fresh maze rather than re-showing this.
+    """
+
+    # GetReadyScreen only calls make_next_state() once every button is
+    # already released, so there's no stale press to debounce here -- same
+    # reasoning as EntryState/ShowSequenceState's un-pressed transitions.
+    ready: bool = True
+
+    def draw(self, surface: pygame.Surface) -> None:
+        CANVAS_WIDTH, _ = surface.get_size()
+        surface.fill((10, 10, 25))
+        white = (255, 255, 255)
+        draw_text(surface, font(48), "Pac-Duo", (CANVAS_WIDTH // 2, 50), white)
+
+        lines = [
+            ("Player 1: Red = Left, Yellow = Right", (255, 60, 60)),
+            ("Player 2: Blue = Up, Green = Down", (60, 130, 255)),
+            ("One shared character -- move together!", white),
+            ("White: spend a power-up to scare the ghosts", (255, 180, 60)),
+            ("Eat every dot to win.", white),
+            ("Caught by a ghost (not scared) = game over.", white),
+        ]
+        y = 140
+        for text, color in lines:
+            draw_text(surface, font(30), text, (CANVAS_WIDTH // 2, y), color)
+            y += 48
+
+        draw_text(surface, font(30), "Press any button to continue", (CANVAS_WIDTH // 2, y + 20), white)
+
+    def next_state(self, input: Input) -> State | None:
+        if big_red_button_pressed():
+            return None  # back to the menu
+
+        any_pressed = any(button.is_pressed() for button in input.buttons)
+        if not any_pressed:
+            return self if self.ready else replace(self, ready=True)
+        if not self.ready:
+            return self
+
+        return new_pacman()
+
+
+@dataclass
 class PacDuoResultScreen:
     won: bool
     # Starts unarmed: the press that got us here (a movement button, or none
@@ -238,3 +284,7 @@ def new_pacman() -> PacDuoState:
         ghosts=[Ghost(pos=start, start=start) for start in ghost_starts],
         pellets_remaining=pellets_remaining,
     )
+
+
+def new_pacman_with_rules() -> RulesScreen:
+    return RulesScreen()

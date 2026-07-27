@@ -14,7 +14,9 @@ from pacman.game import (
     Ghost,
     PacDuoResultScreen,
     PacDuoState,
+    RulesScreen,
     new_pacman,
+    new_pacman_with_rules,
 )
 
 
@@ -60,6 +62,27 @@ def make_state(grid=None, player_pos=(2, 2), ghosts=None, **overrides: Any) -> P
     for key, value in overrides.items():
         setattr(state, key, value)
     return state
+
+
+def test_new_pacman_with_rules_starts_on_the_rules_screen():
+    state = new_pacman_with_rules()
+    assert isinstance(state, RulesScreen)
+
+
+def test_rules_screen_advances_to_the_maze_on_any_press():
+    state = RulesScreen()
+    result = state.next_state(press(BLUE))
+    assert isinstance(result, PacDuoState)
+
+
+def test_rules_screen_big_red_button_returns_to_menu():
+    state = RulesScreen()
+    sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, True)
+    try:
+        result = state.next_state(release())
+    finally:
+        sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, False)
+    assert result is None
 
 
 def test_new_pacman_starts_with_pellets_and_the_expected_layout():
