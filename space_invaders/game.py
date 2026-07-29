@@ -1,4 +1,4 @@
-"""Space Invaders: Red/Yellow slide the ship left and right, Green fires a
+"""Space Invaders: Red/Blue slide the ship left and right, Green fires a
 single bullet at a time straight up. A grid of enemies drifts side to side,
 stepping down and firing back whenever it hits a wall; clear them all to win,
 or run out of lives (to their return fire) or let them reach the ship to lose.
@@ -78,12 +78,12 @@ def _next_enemy_shot_delay() -> int:
 
 
 def _light_control_leds() -> None:
-    """Red/Yellow move the ship, Green fires -- those three stay lit. Blue and
+    """Red/Blue move the ship, Green fires -- those three stay lit. Yellow and
     White have no role here, so they stay off."""
     buttons[Color.RED].set_led(True)
-    buttons[Color.YELLOW].set_led(True)
     buttons[Color.GREEN].set_led(True)
-    buttons[Color.BLUE].set_led(False)
+    buttons[Color.BLUE].set_led(True)
+    buttons[Color.YELLOW].set_led(False)
     buttons[Color.WHITE].set_led(False)
 
 
@@ -171,8 +171,8 @@ class SpaceInvadersState:
         _light_control_leds()
 
         red_held = buttons[Color.RED].is_pressed()
-        yellow_held = buttons[Color.YELLOW].is_pressed()
-        dx = (1 if yellow_held else 0) - (1 if red_held else 0)
+        blue_held = buttons[Color.BLUE].is_pressed()
+        dx = (1 if blue_held else 0) - (1 if red_held else 0)
         self.player_x = min(max(self.player_x + dx * PLAYER_SPEED * dt, PLAY_LEFT), PLAY_RIGHT - PLAYER_WIDTH)
 
         if self.respawn_at is not None:
@@ -281,7 +281,7 @@ class RulesScreen:
         draw_text(surface, font(48), "Space Invaders", (CANVAS_WIDTH // 2, 50), white)
 
         lines = [
-            ("Red = ship left, Yellow = ship right", white),
+            ("Red = ship left, Blue = ship right", white),
             ("Green = fire (one bullet at a time)", white),
             ("Clear every invader to win.", white),
             ("Don't let them reach you, and watch out for their fire.", white),

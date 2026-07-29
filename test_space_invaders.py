@@ -87,7 +87,7 @@ def test_new_space_invaders_starts_with_a_full_grid_and_lives_and_a_centered_shi
 def test_player_moves_left_and_right():
     state = ticking(new_space_invaders())
     start_x = state.player_x
-    state.next_state(held(YELLOW, current_time=1_100))
+    state.next_state(held(BLUE, current_time=1_100))
     assert state.player_x > start_x
 
     mid_x = state.player_x
@@ -102,7 +102,7 @@ def test_player_is_clamped_within_the_play_area():
     assert state.player_x == PLAY_LEFT
 
     for t in range(5_100, 9_000, 100):
-        state.next_state(held(YELLOW, current_time=t))
+        state.next_state(held(BLUE, current_time=t))
     assert state.player_x == PLAY_RIGHT - PLAYER_WIDTH
 
 
@@ -239,8 +239,8 @@ def test_control_leds_turn_off_when_the_game_ends():
     )
     state.next_state(held(current_time=1_010))
     assert sim_gpio.get_output_state(buttons[Color.RED].led_pin) is False
-    assert sim_gpio.get_output_state(buttons[Color.YELLOW].led_pin) is False
     assert sim_gpio.get_output_state(buttons[Color.GREEN].led_pin) is False
+    assert sim_gpio.get_output_state(buttons[Color.BLUE].led_pin) is False
 
 
 def test_big_red_button_returns_to_menu():
