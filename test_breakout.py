@@ -8,6 +8,7 @@ from breakout.game import (
     BRICK_COLS,
     BRICK_ROWS,
     CANVAS_HEIGHT,
+    GAME_OVER_DELAY_MS,
     HUD_HEIGHT,
     PADDLE_WIDTH,
     PADDLE_Y,
@@ -270,7 +271,7 @@ def test_ball_hitting_a_brick_removes_it_and_bounces():
     assert state.ball_vy > 0
 
 
-def test_clearing_the_last_brick_wins():
+def test_clearing_the_last_brick_wins_after_a_delay_to_admire_the_face():
     bricks = [[False] * BRICK_COLS for _ in range(BRICK_ROWS)]
     bricks[0][0] = True
     from breakout.game import _brick_rect
@@ -280,6 +281,15 @@ def test_clearing_the_last_brick_wins():
         bricks=bricks, bricks_remaining=1, last_update_time=1_000,
     )
     result = state.next_state(held(current_time=1_010))
+    assert result is state  # board stays up, showing the fully revealed face
+    assert state.pending_result is not None
+    assert state.pending_result.won is True
+    assert state.pending_result.bricks_hit == TOTAL_BRICKS
+
+    still_showing = state.next_state(held(current_time=1_010 + GAME_OVER_DELAY_MS - 1))
+    assert still_showing is state
+
+    result = state.next_state(held(current_time=1_010 + GAME_OVER_DELAY_MS))
     assert isinstance(result, BreakoutResultScreen)
     assert result.won is True
     assert result.bricks_hit == TOTAL_BRICKS
@@ -325,13 +335,19 @@ def test_paddle_still_moves_during_the_serve_delay():
     assert state.paddle_x > 300
 
 
-def test_missing_the_ball_on_the_last_life_ends_the_game():
+def test_missing_the_ball_on_the_last_life_ends_the_game_after_a_delay():
     state = BreakoutState(
         paddle_x=300, ball_x=400, ball_y=CANVAS_HEIGHT - 5, ball_vx=0, ball_vy=200,
         bricks=[[False] * BRICK_COLS for _ in range(BRICK_ROWS)], bricks_remaining=5,
         lives=1, last_update_time=1_000,
     )
     result = state.next_state(held(current_time=1_100))
+    assert result is state  # board stays up for a moment rather than cutting straight away
+    assert state.pending_result is not None
+    assert state.pending_result.won is False
+    assert state.pending_result.bricks_hit == TOTAL_BRICKS - 5
+
+    result = state.next_state(held(current_time=1_100 + GAME_OVER_DELAY_MS))
     assert isinstance(result, BreakoutResultScreen)
     assert result.won is False
     assert result.bricks_hit == TOTAL_BRICKS - 5

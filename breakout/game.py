@@ -69,6 +69,7 @@ INITIAL_BALL_VX = 150
 INITIAL_BALL_VY = -260
 MAX_BALL_VX = 300  # how much paddle-edge hits can redirect the ball sideways
 SERVE_DELAY_MS = 1000  # pause after a miss before the next ball drops in
+GAME_OVER_DELAY_MS = 3000  # let the fully revealed face sit a moment before the result screen
 
 STARTING_LIVES = 3
 
@@ -210,6 +211,12 @@ class BreakoutState:
     # Which silly face (index into REVEAL_FACES) is hiding behind this game's
     # bricks -- picked once when the game starts and fixed for its duration.
     reveal_face: int = 0
+    # Set once the win/lose condition is reached: the board freezes as-is
+    # (face fully visible) and next_state keeps returning self until
+    # game_over_at, so the player gets a moment to enjoy it before the result
+    # screen takes over.
+    pending_result: BreakoutResultScreen | None = None
+    game_over_at: int | None = None
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill((10, 10, 25))
@@ -226,7 +233,7 @@ class BreakoutState:
                     pygame.draw.rect(surface, ROW_COLORS[row % len(ROW_COLORS)], _brick_rect(row, col))
 
         pygame.draw.rect(surface, white, (self.paddle_x, PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT))
-        if self.serve_at is None:
+        if self.serve_at is None and self.pending_result is None:
             pygame.draw.circle(surface, white, (round(self.ball_x), round(self.ball_y)), BALL_RADIUS)
 
         score_box = pygame.Rect(SCORE_BOX_LEFT, SCORE_BOX_TOP, SCORE_BOX_WIDTH, SCORE_BOX_HEIGHT)
@@ -239,7 +246,9 @@ class BreakoutState:
         self.lives -= 1
         if self.lives <= 0:
             _clear_control_leds()
-            return BreakoutResultScreen(won=False, bricks_hit=TOTAL_BRICKS - self.bricks_remaining)
+            self.pending_result = BreakoutResultScreen(won=False, bricks_hit=TOTAL_BRICKS - self.bricks_remaining)
+            self.game_over_at = current_time + GAME_OVER_DELAY_MS
+            return self
         self.serve_at = current_time + SERVE_DELAY_MS
         return self
 
@@ -254,6 +263,11 @@ class BreakoutState:
             return self
         dt = max(0, current_time - self.last_update_time) / 1000.0
         self.last_update_time = current_time
+
+        if self.pending_result is not None:
+            if current_time < self.game_over_at:
+                return self
+            return self.pending_result
 
         red_held = buttons[Color.RED].is_pressed()
         yellow_held = buttons[Color.YELLOW].is_pressed()
@@ -313,7 +327,9 @@ class BreakoutState:
 
         if self.bricks_remaining <= 0:
             _clear_control_leds()
-            return BreakoutResultScreen(won=True, bricks_hit=TOTAL_BRICKS - self.bricks_remaining)
+            self.pending_result = BreakoutResultScreen(won=True, bricks_hit=TOTAL_BRICKS - self.bricks_remaining)
+            self.game_over_at = current_time + GAME_OVER_DELAY_MS
+            return self
 
         if self.ball_y - BALL_RADIUS > CANVAS_HEIGHT:
             return self._lose_a_life(current_time)
