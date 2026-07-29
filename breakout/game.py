@@ -11,6 +11,7 @@ real time, rather than the discrete state-machine style of quiz/mastermind.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, replace
 
 import pygame
@@ -46,6 +47,15 @@ BRICK_TOP = HUD_HEIGHT + 10
 BRICK_LEFT = PLAY_LEFT + (PLAY_AREA_WIDTH - (BRICK_COLS * BRICK_WIDTH + (BRICK_COLS - 1) * BRICK_GAP)) // 2
 ROW_COLORS = [(230, 60, 60), (230, 140, 50), (230, 210, 50), (70, 200, 90), (70, 150, 230)]
 TOTAL_BRICKS = BRICK_ROWS * BRICK_COLS
+
+# A silly face sits behind the brick grid, exactly the size of the grid itself
+# -- bricks are drawn on top of it each frame, so knocking one out uncovers
+# that patch of the face underneath for good.
+GRID_RECT = pygame.Rect(
+    BRICK_LEFT, BRICK_TOP,
+    BRICK_COLS * BRICK_WIDTH + (BRICK_COLS - 1) * BRICK_GAP,
+    BRICK_ROWS * BRICK_HEIGHT + (BRICK_ROWS - 1) * BRICK_GAP,
+)
 
 PADDLE_WIDTH = 100
 PADDLE_HEIGHT = 14
@@ -100,6 +110,73 @@ def _clear_control_leds() -> None:
         button.set_led(False)
 
 
+def _point(rect: pygame.Rect, fx: float, fy: float) -> tuple[int, int]:
+    """A point inside `rect` at the given (0..1, 0..1) fraction of its size."""
+    return (round(rect.x + rect.w * fx), round(rect.y + rect.h * fy))
+
+
+def _draw_grinning_face(surface: pygame.Surface, rect: pygame.Rect) -> None:
+    pygame.draw.rect(surface, (255, 221, 89), rect)
+    pygame.draw.circle(surface, (255, 255, 255), _point(rect, 0.3, 0.35), round(rect.h * 0.22))
+    pygame.draw.circle(surface, (255, 255, 255), _point(rect, 0.7, 0.35), round(rect.h * 0.22))
+    pygame.draw.circle(surface, (20, 20, 20), _point(rect, 0.34, 0.4), round(rect.h * 0.08))
+    pygame.draw.circle(surface, (20, 20, 20), _point(rect, 0.66, 0.3), round(rect.h * 0.08))
+    pygame.draw.line(surface, (20, 20, 20), _point(rect, 0.18, 0.15), _point(rect, 0.4, 0.22), 4)
+    pygame.draw.line(surface, (20, 20, 20), _point(rect, 0.82, 0.15), _point(rect, 0.6, 0.24), 4)
+    pygame.draw.circle(surface, (250, 140, 150), _point(rect, 0.16, 0.62), round(rect.h * 0.1))
+    pygame.draw.circle(surface, (250, 140, 150), _point(rect, 0.84, 0.62), round(rect.h * 0.1))
+    mouth = pygame.Rect(0, 0, round(rect.w * 0.5), round(rect.h * 0.3))
+    mouth.center = _point(rect, 0.5, 0.74)
+    pygame.draw.ellipse(surface, (200, 40, 50), mouth)
+    teeth = pygame.Rect(0, 0, round(rect.w * 0.3), round(rect.h * 0.08))
+    teeth.midtop = (mouth.centerx, mouth.top + 4)
+    pygame.draw.rect(surface, (255, 255, 255), teeth)
+
+
+def _draw_winking_face(surface: pygame.Surface, rect: pygame.Rect) -> None:
+    pygame.draw.rect(surface, (140, 220, 140), rect)
+    pygame.draw.circle(surface, (255, 255, 255), _point(rect, 0.3, 0.35), round(rect.h * 0.22))
+    pygame.draw.circle(surface, (20, 20, 20), _point(rect, 0.34, 0.35), round(rect.h * 0.08))
+    pygame.draw.arc(
+        surface, (20, 20, 20),
+        pygame.Rect(*_point(rect, 0.55, 0.28), round(rect.w * 0.3), round(rect.h * 0.2)),
+        3.4, 6.0, 4,
+    )
+    pygame.draw.line(surface, (20, 20, 20), _point(rect, 0.16, 0.16), _point(rect, 0.42, 0.2), 4)
+    pygame.draw.line(surface, (20, 20, 20), _point(rect, 0.58, 0.24), _point(rect, 0.86, 0.14), 4)
+    mouth_points = [_point(rect, 0.28, 0.66), _point(rect, 0.72, 0.6), _point(rect, 0.6, 0.85), _point(rect, 0.32, 0.8)]
+    pygame.draw.polygon(surface, (140, 30, 40), mouth_points)
+    tongue = pygame.Rect(0, 0, round(rect.w * 0.14), round(rect.h * 0.16))
+    tongue.center = _point(rect, 0.62, 0.92)
+    pygame.draw.ellipse(surface, (250, 130, 150), tongue)
+
+
+def _draw_shocked_face(surface: pygame.Surface, rect: pygame.Rect) -> None:
+    pygame.draw.rect(surface, (176, 176, 250), rect)
+    pygame.draw.circle(surface, (255, 255, 255), _point(rect, 0.32, 0.4), round(rect.h * 0.26))
+    pygame.draw.circle(surface, (255, 255, 255), _point(rect, 0.68, 0.4), round(rect.h * 0.26))
+    pygame.draw.circle(surface, (20, 20, 20), _point(rect, 0.32, 0.4), round(rect.h * 0.07))
+    pygame.draw.circle(surface, (20, 20, 20), _point(rect, 0.68, 0.4), round(rect.h * 0.07))
+    pygame.draw.arc(
+        surface, (20, 20, 20),
+        pygame.Rect(*_point(rect, 0.16, 0.02), round(rect.w * 0.28), round(rect.h * 0.2)),
+        0.2, 2.6, 4,
+    )
+    pygame.draw.arc(
+        surface, (20, 20, 20),
+        pygame.Rect(*_point(rect, 0.56, 0.02), round(rect.w * 0.28), round(rect.h * 0.2)),
+        0.5, 2.9, 4,
+    )
+    mouth = pygame.Rect(0, 0, round(rect.w * 0.22), round(rect.h * 0.3))
+    mouth.center = _point(rect, 0.5, 0.78)
+    pygame.draw.ellipse(surface, (40, 20, 20), mouth)
+    drop = [_point(rect, 0.9, 0.15), _point(rect, 0.96, 0.28), _point(rect, 0.84, 0.28)]
+    pygame.draw.polygon(surface, (120, 180, 250), drop)
+
+
+REVEAL_FACES = [_draw_grinning_face, _draw_winking_face, _draw_shocked_face]
+
+
 def _served_ball(paddle_x: float) -> tuple[float, float, float, float]:
     """Ball position/velocity for a fresh serve, resting just above the
     paddle's current position."""
@@ -130,6 +207,9 @@ class BreakoutState:
     # engaged until that time passes, regardless of whether the buttons are
     # still down, rather than cutting out the instant they're released.
     turbo_until: int | None = None
+    # Which silly face (index into REVEAL_FACES) is hiding behind this game's
+    # bricks -- picked once when the game starts and fixed for its duration.
+    reveal_face: int = 0
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill((10, 10, 25))
@@ -139,6 +219,7 @@ class BreakoutState:
         pygame.draw.rect(surface, WALL_COLOR, (PLAY_LEFT - WALL_THICKNESS, HUD_HEIGHT, WALL_THICKNESS, CANVAS_HEIGHT - HUD_HEIGHT))
         pygame.draw.rect(surface, WALL_COLOR, (PLAY_RIGHT, HUD_HEIGHT, WALL_THICKNESS, CANVAS_HEIGHT - HUD_HEIGHT))
 
+        REVEAL_FACES[self.reveal_face](surface, GRID_RECT)
         for row in range(BRICK_ROWS):
             for col in range(BRICK_COLS):
                 if self.bricks[row][col]:
@@ -259,6 +340,7 @@ class RulesScreen:
             ("Hold White + Red/Yellow for a 15-second turbo boost", (255, 180, 60)),
             ("The ball bounces on its own -- keep it in play.", white),
             ("Clear every brick to win.", white),
+            ("Watch for a silly face hiding behind the bricks!", (255, 180, 60)),
             (f"Miss the ball {STARTING_LIVES} times and it's game over.", white),
         ]
         y = 150
@@ -335,6 +417,7 @@ def new_breakout() -> BreakoutState:
         ball_vy=ball_vy,
         bricks=_new_bricks(),
         bricks_remaining=TOTAL_BRICKS,
+        reveal_face=random.randrange(len(REVEAL_FACES)),
     )
 
 

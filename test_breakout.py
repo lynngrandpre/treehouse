@@ -13,6 +13,7 @@ from breakout.game import (
     PADDLE_Y,
     PLAY_LEFT,
     PLAY_RIGHT,
+    REVEAL_FACES,
     SERVE_DELAY_MS,
     STARTING_LIVES,
     TOTAL_BRICKS,
@@ -84,6 +85,14 @@ def test_new_breakout_starts_with_full_bricks_and_lives_and_a_centered_paddle():
     assert state.bricks_remaining == BRICK_ROWS * BRICK_COLS
     assert all(all(row) for row in state.bricks)
     assert state.paddle_x == PLAY_LEFT + (PLAY_RIGHT - PLAY_LEFT - PADDLE_WIDTH) / 2
+
+
+def test_new_breakout_picks_a_valid_reveal_face_and_keeps_it_across_ticks():
+    state = ticking(new_breakout())
+    assert state.reveal_face in range(len(REVEAL_FACES))
+    face = state.reveal_face
+    state.next_state(held(current_time=50))
+    assert state.reveal_face == face
 
 
 def test_first_tick_only_anchors_the_clock_and_does_not_move_anything():
