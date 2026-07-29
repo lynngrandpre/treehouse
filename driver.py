@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import pygame
 
-from hardware import SIMULATOR, GPIO, buttons_in_order
+from dataclasses import dataclass
+
+from hardware import SIMULATOR, GPIO, big_red_button_pressed, buttons, buttons_in_order
 from common import Input, GetReadyScreen, State, font
 
 # Only ever used in the simulator-only helpers below. Importing it unconditionally
@@ -38,6 +40,43 @@ _BUTTON_AREA_HEIGHT = 140
 _BUTTON_SIZE = 90
 _BUTTON_GAP = 20
 _BUTTON_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]
+
+IDLE_TIMEOUT_MS = 5 * 60 * 1000  # blank the screen and LEDs after this long with no button touched
+
+
+@dataclass
+class IdleMonitor:
+    """Tracks how long it's been since any button (including the big red one)
+    was last touched. Call update() once per frame; while it returns True the
+    screen should stay blanked and the game's next_state should not be called,
+    so an idle game doesn't keep running unseen.
+
+    A press wakes it up, but that same press is swallowed (still reported as
+    "blank this frame") until it's released, so the press that wakes the
+    device doesn't also register as a game input -- same idea as
+    GetReadyScreen's debounce.
+    """
+
+    last_activity_time: int | None = None
+    idle: bool = False
+    waking: bool = False
+
+    def update(self, current_time: int, any_pressed: bool) -> bool:
+        if self.last_activity_time is None:
+            self.last_activity_time = current_time
+
+        if any_pressed:
+            if self.idle:
+                self.idle = False
+                self.waking = True
+            self.last_activity_time = current_time
+        elif self.waking:
+            self.waking = False
+
+        if not self.idle and current_time - self.last_activity_time >= IDLE_TIMEOUT_MS:
+            self.idle = True
+
+        return self.idle or self.waking
 
 
 def _button_rects() -> list[pygame.Rect]:
@@ -97,17 +136,25 @@ def run(initial_state: State) -> None:
             pygame.mouse.set_visible(False)
 
         state = initial_state
+        idle_monitor = IdleMonitor()
         game_over = False
         while not game_over:
             if SIMULATOR:
                 _update_simulated_input(button_rects)
 
-            device_surface.fill((240, 240, 240))
             current_time = pygame.time.get_ticks()
-            state = state.next_state(Input(buttons_in_order, current_time))
-            if state is None:
-                state = GetReadyScreen(menu.home)
-            state.draw(device_surface)
+            any_pressed = any(button.is_pressed() for button in buttons_in_order) or big_red_button_pressed()
+
+            if idle_monitor.update(current_time, any_pressed):
+                device_surface.fill((0, 0, 0))
+                for button in buttons.values():
+                    button.set_led(False)
+            else:
+                device_surface.fill((240, 240, 240))
+                state = state.next_state(Input(buttons_in_order, current_time))
+                if state is None:
+                    state = GetReadyScreen(menu.home)
+                state.draw(device_surface)
 
             if SIMULATOR:
                 _draw_simulator_chrome(window, device_surface, button_rects)
