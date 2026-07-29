@@ -18,6 +18,7 @@ import pacman
 import quiz
 import vault
 from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, font
+from hardware import buttons_in_order
 
 GAMES_PER_PAGE = 3
 
@@ -60,7 +61,17 @@ class MenuState:
         draw_text(surface, font(60), "Choose a Game", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 3))
         self._options_picker().draw(surface)
 
+    def _light_available_leds(self) -> None:
+        """Only buttons that map to a real choice on this page light up -- the
+        blank arrow slots on the first/last page (and any leftover slots when
+        there are fewer than five options) stay dark."""
+        options = self._options_picker().options
+        for i, button in enumerate(buttons_in_order):
+            button.set_led(i < len(options) and options[i] != "")
+
     def next_state(self, input: Input) -> State | None:
+        self._light_available_leds()
+
         any_pressed = any(button.is_pressed() for button in input.buttons)
         if not any_pressed:
             # Buttons released -- arm the next press.

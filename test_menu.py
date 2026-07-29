@@ -15,6 +15,11 @@ from menu import MenuState
 from quiz.game import AskingQuestionState
 
 
+def led_states(state: MenuState) -> list[bool]:
+    state.next_state(release())
+    return [sim_gpio.get_output_state(button.led_pin) for button in buttons_in_order]
+
+
 def press(*indices: int) -> Input:
     """An Input with exactly the buttons at the given left-to-right indices held."""
     for i, button in enumerate(buttons_in_order):
@@ -121,6 +126,17 @@ def test_selecting_a_game_starts_it_via_get_ready():
     # GetReadyScreen builds the chosen game once buttons are released.
     started = result.next_state(release())
     assert isinstance(started, AskingQuestionState)
+
+
+def test_first_page_lights_only_the_games_and_the_next_arrow():
+    # ["", "Color Easy", "Color Medium", "Color Hard", ">"] -- blank "<" slot stays dark.
+    assert led_states(MenuState()) == [False, True, True, True, True]
+
+
+def test_last_page_lights_only_the_prev_arrow_and_the_one_game():
+    # ["<", "Breakout", ""] -- the two unused trailing slots stay dark.
+    state = click(click(click(click(MenuState(), 4), 4), 4), 4)
+    assert led_states(state) == [True, True, False, False, False]
 
 
 def test_arrow_button_does_not_start_a_game():
