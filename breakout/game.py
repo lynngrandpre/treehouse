@@ -22,19 +22,29 @@ CANVAS_WIDTH = 800
 CANVAS_HEIGHT = 480
 HUD_HEIGHT = 40
 
+# The playing field is narrower than the canvas and centered, with a solid
+# wall along each side -- the paddle and ball are confined between the walls'
+# inner faces rather than the canvas edges.
+WALL_THICKNESS = 14
+PLAY_AREA_WIDTH = 700
+PLAY_LEFT = (CANVAS_WIDTH - PLAY_AREA_WIDTH) // 2
+PLAY_RIGHT = PLAY_LEFT + PLAY_AREA_WIDTH
+WALL_COLOR = (70, 70, 100)
+
 BRICK_ROWS = 5
 BRICK_COLS = 10
-BRICK_WIDTH = 70
-BRICK_HEIGHT = 22
 BRICK_GAP = 6
+BRICK_WIDTH = (PLAY_AREA_WIDTH - (BRICK_COLS - 1) * BRICK_GAP) // BRICK_COLS
+BRICK_HEIGHT = 22
 BRICK_TOP = HUD_HEIGHT + 10
-BRICK_LEFT = (CANVAS_WIDTH - (BRICK_COLS * BRICK_WIDTH + (BRICK_COLS - 1) * BRICK_GAP)) // 2
+BRICK_LEFT = PLAY_LEFT + (PLAY_AREA_WIDTH - (BRICK_COLS * BRICK_WIDTH + (BRICK_COLS - 1) * BRICK_GAP)) // 2
 ROW_COLORS = [(230, 60, 60), (230, 140, 50), (230, 210, 50), (70, 200, 90), (70, 150, 230)]
 
 PADDLE_WIDTH = 100
 PADDLE_HEIGHT = 14
 PADDLE_Y = CANVAS_HEIGHT - 40
 PADDLE_SPEED = 480  # pixels per second
+TURBO_MULTIPLIER = 2.0  # White held with Red or Yellow speeds the paddle up
 
 BALL_RADIUS = 8
 INITIAL_BALL_VX = 150
@@ -84,6 +94,9 @@ class BreakoutState:
         white = (255, 255, 255)
         draw_text(surface, font(20), f"Lives: {self.lives}   Bricks: {self.bricks_remaining}", (110, 20), white)
 
+        pygame.draw.rect(surface, WALL_COLOR, (PLAY_LEFT - WALL_THICKNESS, HUD_HEIGHT, WALL_THICKNESS, CANVAS_HEIGHT - HUD_HEIGHT))
+        pygame.draw.rect(surface, WALL_COLOR, (PLAY_RIGHT, HUD_HEIGHT, WALL_THICKNESS, CANVAS_HEIGHT - HUD_HEIGHT))
+
         for row in range(BRICK_ROWS):
             for col in range(BRICK_COLS):
                 if self.bricks[row][col]:
@@ -110,17 +123,21 @@ class BreakoutState:
         dt = max(0, current_time - self.last_update_time) / 1000.0
         self.last_update_time = current_time
 
-        dx = (1 if buttons[Color.YELLOW].is_pressed() else 0) - (1 if buttons[Color.RED].is_pressed() else 0)
-        self.paddle_x = min(max(self.paddle_x + dx * PADDLE_SPEED * dt, 0), CANVAS_WIDTH - PADDLE_WIDTH)
+        red_held = buttons[Color.RED].is_pressed()
+        yellow_held = buttons[Color.YELLOW].is_pressed()
+        turbo = buttons[Color.WHITE].is_pressed() and (red_held or yellow_held)
+        speed = PADDLE_SPEED * TURBO_MULTIPLIER if turbo else PADDLE_SPEED
+        dx = (1 if yellow_held else 0) - (1 if red_held else 0)
+        self.paddle_x = min(max(self.paddle_x + dx * speed * dt, PLAY_LEFT), PLAY_RIGHT - PADDLE_WIDTH)
 
         self.ball_x += self.ball_vx * dt
         self.ball_y += self.ball_vy * dt
 
-        if self.ball_x <= BALL_RADIUS:
-            self.ball_x = BALL_RADIUS
+        if self.ball_x <= PLAY_LEFT + BALL_RADIUS:
+            self.ball_x = PLAY_LEFT + BALL_RADIUS
             self.ball_vx = abs(self.ball_vx)
-        elif self.ball_x >= CANVAS_WIDTH - BALL_RADIUS:
-            self.ball_x = CANVAS_WIDTH - BALL_RADIUS
+        elif self.ball_x >= PLAY_RIGHT - BALL_RADIUS:
+            self.ball_x = PLAY_RIGHT - BALL_RADIUS
             self.ball_vx = -abs(self.ball_vx)
 
         if self.ball_y <= HUD_HEIGHT + BALL_RADIUS:
@@ -177,6 +194,7 @@ class RulesScreen:
 
         lines = [
             ("Red = paddle left, Yellow = paddle right", white),
+            ("Hold White + Red/Yellow for a turbo speed boost", (255, 180, 60)),
             ("The ball bounces on its own -- keep it in play.", white),
             ("Clear every brick to win.", white),
             (f"Miss the ball {STARTING_LIVES} times and it's game over.", white),
@@ -240,7 +258,7 @@ class BreakoutResultScreen:
 
 
 def new_breakout() -> BreakoutState:
-    paddle_x = (CANVAS_WIDTH - PADDLE_WIDTH) / 2
+    paddle_x = PLAY_LEFT + (PLAY_AREA_WIDTH - PADDLE_WIDTH) / 2
     ball_x, ball_y, ball_vx, ball_vy = _served_ball(paddle_x)
     return BreakoutState(
         paddle_x=paddle_x,

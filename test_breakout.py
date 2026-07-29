@@ -8,11 +8,13 @@ from breakout.game import (
     BRICK_COLS,
     BRICK_ROWS,
     CANVAS_HEIGHT,
-    CANVAS_WIDTH,
     HUD_HEIGHT,
     PADDLE_WIDTH,
     PADDLE_Y,
+    PLAY_LEFT,
+    PLAY_RIGHT,
     STARTING_LIVES,
+    TURBO_MULTIPLIER,
     BreakoutResultScreen,
     BreakoutState,
     RulesScreen,
@@ -78,7 +80,7 @@ def test_new_breakout_starts_with_full_bricks_and_lives_and_a_centered_paddle():
     assert state.lives == STARTING_LIVES
     assert state.bricks_remaining == BRICK_ROWS * BRICK_COLS
     assert all(all(row) for row in state.bricks)
-    assert state.paddle_x == (CANVAS_WIDTH - PADDLE_WIDTH) / 2
+    assert state.paddle_x == PLAY_LEFT + (PLAY_RIGHT - PLAY_LEFT - PADDLE_WIDTH) / 2
 
 
 def test_first_tick_only_anchors_the_clock_and_does_not_move_anything():
@@ -92,26 +94,48 @@ def test_first_tick_only_anchors_the_clock_and_does_not_move_anything():
 def test_paddle_moves_right_toward_yellow_and_left_toward_red():
     state = ticking(new_breakout())
     state.next_state(held(YELLOW, current_time=1_100))
-    assert state.paddle_x > (CANVAS_WIDTH - PADDLE_WIDTH) / 2
+    assert state.paddle_x > PLAY_LEFT + (PLAY_RIGHT - PLAY_LEFT - PADDLE_WIDTH) / 2
 
     state = ticking(new_breakout())
     state.next_state(held(RED, current_time=1_100))
-    assert state.paddle_x < (CANVAS_WIDTH - PADDLE_WIDTH) / 2
+    assert state.paddle_x < PLAY_LEFT + (PLAY_RIGHT - PLAY_LEFT - PADDLE_WIDTH) / 2
 
 
-def test_paddle_is_clamped_to_the_canvas():
+def test_paddle_is_clamped_to_the_play_area():
     state = ticking(new_breakout())
-    state.next_state(held(RED, current_time=10_000))  # way more than enough to cross the whole canvas
-    assert state.paddle_x == 0
+    state.next_state(held(RED, current_time=10_000))  # way more than enough to cross the whole play area
+    assert state.paddle_x == PLAY_LEFT
 
     state = ticking(new_breakout())
     state.next_state(held(YELLOW, current_time=10_000))
-    assert state.paddle_x == CANVAS_WIDTH - PADDLE_WIDTH
+    assert state.paddle_x == PLAY_RIGHT - PADDLE_WIDTH
+
+
+def test_turbo_moves_the_paddle_faster_than_normal():
+    # A short dt so neither run clamps against the play-area wall.
+    state = ticking(new_breakout())
+    start = state.paddle_x
+    state.next_state(held(YELLOW, current_time=50))
+    normal_distance = state.paddle_x - start
+
+    state = ticking(new_breakout())
+    start = state.paddle_x
+    state.next_state(held(WHITE, YELLOW, current_time=50))
+    turbo_distance = state.paddle_x - start
+
+    assert turbo_distance == normal_distance * TURBO_MULTIPLIER
+
+
+def test_white_alone_does_not_move_the_paddle():
+    state = ticking(new_breakout())
+    start = state.paddle_x
+    state.next_state(held(WHITE, current_time=50))
+    assert state.paddle_x == start
 
 
 def test_ball_bounces_off_the_left_wall():
     state = BreakoutState(
-        paddle_x=0, ball_x=BALL_RADIUS + 1, ball_y=200, ball_vx=-100, ball_vy=-50,
+        paddle_x=PLAY_LEFT, ball_x=PLAY_LEFT + BALL_RADIUS + 1, ball_y=200, ball_vx=-100, ball_vy=-50,
         bricks=[[False] * BRICK_COLS for _ in range(BRICK_ROWS)], bricks_remaining=0, last_update_time=1_000,
     )
     state.next_state(held(current_time=1_100))
@@ -120,7 +144,7 @@ def test_ball_bounces_off_the_left_wall():
 
 def test_ball_bounces_off_the_right_wall():
     state = BreakoutState(
-        paddle_x=0, ball_x=CANVAS_WIDTH - BALL_RADIUS - 1, ball_y=200, ball_vx=100, ball_vy=-50,
+        paddle_x=PLAY_LEFT, ball_x=PLAY_RIGHT - BALL_RADIUS - 1, ball_y=200, ball_vx=100, ball_vy=-50,
         bricks=[[False] * BRICK_COLS for _ in range(BRICK_ROWS)], bricks_remaining=0, last_update_time=1_000,
     )
     state.next_state(held(current_time=1_100))
