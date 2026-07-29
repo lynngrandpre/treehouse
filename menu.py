@@ -16,6 +16,7 @@ import color_game
 import mastermind
 import pacman
 import quiz
+import space_invaders
 import vault
 from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, font
 from hardware import buttons_in_order
@@ -24,6 +25,7 @@ GAMES_PER_PAGE = 3
 
 all_games = (
     color_game.games + quiz.games + mastermind.games + chain.games + pacman.games + vault.games + breakout.games
+    + space_invaders.games
 )
 
 
