@@ -13,6 +13,7 @@ from breakout.game import (
     PADDLE_Y,
     PLAY_LEFT,
     PLAY_RIGHT,
+    SERVE_DELAY_MS,
     STARTING_LIVES,
     TURBO_MULTIPLIER,
     BreakoutResultScreen,
@@ -22,7 +23,7 @@ from breakout.game import (
     new_breakout_with_rules,
 )
 from common import Input
-from hardware import BIG_RED_BUTTON_PIN, buttons_in_order
+from hardware import BIG_RED_BUTTON_PIN, Color, buttons, buttons_in_order
 
 
 def press(*indices: int) -> Input:
@@ -133,6 +134,34 @@ def test_white_alone_does_not_move_the_paddle():
     assert state.paddle_x == start
 
 
+def test_red_and_yellow_leds_light_up_as_a_control_cue():
+    state = ticking(new_breakout())
+    state.next_state(held(current_time=50))
+    assert sim_gpio.get_output_state(buttons[Color.RED].led_pin) is True
+    assert sim_gpio.get_output_state(buttons[Color.YELLOW].led_pin) is True
+
+
+def test_white_led_lights_up_only_during_turbo():
+    state = ticking(new_breakout())
+    state.next_state(held(YELLOW, current_time=50))
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is False
+
+    state.next_state(held(WHITE, YELLOW, current_time=100))
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is True
+
+
+def test_control_leds_turn_off_when_the_game_ends():
+    state = BreakoutState(
+        paddle_x=300, ball_x=400, ball_y=CANVAS_HEIGHT - 5, ball_vx=0, ball_vy=200,
+        bricks=[[False] * BRICK_COLS for _ in range(BRICK_ROWS)], bricks_remaining=5,
+        lives=1, last_update_time=1_000,
+    )
+    state.next_state(held(current_time=1_100))
+    assert sim_gpio.get_output_state(buttons[Color.RED].led_pin) is False
+    assert sim_gpio.get_output_state(buttons[Color.YELLOW].led_pin) is False
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is False
+
+
 def test_ball_bounces_off_the_left_wall():
     state = BreakoutState(
         paddle_x=PLAY_LEFT, ball_x=PLAY_LEFT + BALL_RADIUS + 1, ball_y=200, ball_vx=-100, ball_vy=-50,
@@ -203,7 +232,7 @@ def test_clearing_the_last_brick_wins():
     assert result.won is True
 
 
-def test_missing_the_ball_costs_a_life_and_serves_a_new_ball():
+def test_missing_the_ball_costs_a_life_and_starts_the_serve_delay():
     state = BreakoutState(
         paddle_x=300, ball_x=400, ball_y=CANVAS_HEIGHT - 5, ball_vx=0, ball_vy=200,
         bricks=[[False] * BRICK_COLS for _ in range(BRICK_ROWS)], bricks_remaining=5,
@@ -212,7 +241,35 @@ def test_missing_the_ball_costs_a_life_and_serves_a_new_ball():
     result = state.next_state(held(current_time=1_100))
     assert result is state
     assert state.lives == STARTING_LIVES - 1
+    assert state.serve_at == 1_100 + SERVE_DELAY_MS
+
+
+def test_a_new_ball_stays_hidden_until_the_serve_delay_elapses_then_serves():
+    state = BreakoutState(
+        paddle_x=300, ball_x=400, ball_y=CANVAS_HEIGHT - 5, ball_vx=0, ball_vy=200,
+        bricks=[[False] * BRICK_COLS for _ in range(BRICK_ROWS)], bricks_remaining=5,
+        lives=STARTING_LIVES, last_update_time=1_000,
+    )
+    state.next_state(held(current_time=1_100))  # loses a life, starts the delay
+
+    still_waiting = state.next_state(held(current_time=1_100 + SERVE_DELAY_MS - 1))
+    assert still_waiting is state
+    assert state.serve_at is not None
+
+    state.next_state(held(current_time=1_100 + SERVE_DELAY_MS))
+    assert state.serve_at is None
     assert state.ball_y < CANVAS_HEIGHT  # served fresh, back above the paddle
+
+
+def test_paddle_still_moves_during_the_serve_delay():
+    state = BreakoutState(
+        paddle_x=300, ball_x=400, ball_y=CANVAS_HEIGHT - 5, ball_vx=0, ball_vy=200,
+        bricks=[[False] * BRICK_COLS for _ in range(BRICK_ROWS)], bricks_remaining=5,
+        lives=STARTING_LIVES, last_update_time=1_000,
+    )
+    state.next_state(held(current_time=1_100))  # loses a life, starts the delay
+    state.next_state(held(YELLOW, current_time=1_150))
+    assert state.paddle_x > 300
 
 
 def test_missing_the_ball_on_the_last_life_ends_the_game():

@@ -50,6 +50,7 @@ BALL_RADIUS = 8
 INITIAL_BALL_VX = 150
 INITIAL_BALL_VY = -260
 MAX_BALL_VX = 300  # how much paddle-edge hits can redirect the ball sideways
+SERVE_DELAY_MS = 1000  # pause after a miss before the next ball drops in
 
 STARTING_LIVES = 3
 
@@ -64,6 +65,20 @@ def _brick_rect(row: int, col: int) -> pygame.Rect:
     x = BRICK_LEFT + col * (BRICK_WIDTH + BRICK_GAP)
     y = BRICK_TOP + row * (BRICK_HEIGHT + BRICK_GAP)
     return pygame.Rect(x, y, BRICK_WIDTH, BRICK_HEIGHT)
+
+
+def _light_control_leds(turbo: bool) -> None:
+    """Red/Yellow stay lit as a reminder those are the paddle controls; White
+    lights up only while turbo is engaged."""
+    buttons[Color.RED].set_led(True)
+    buttons[Color.YELLOW].set_led(True)
+    buttons[Color.WHITE].set_led(turbo)
+
+
+def _clear_control_leds() -> None:
+    buttons[Color.RED].set_led(False)
+    buttons[Color.YELLOW].set_led(False)
+    buttons[Color.WHITE].set_led(False)
 
 
 def _served_ball(paddle_x: float) -> tuple[float, float, float, float]:
@@ -88,6 +103,10 @@ class BreakoutState:
     # the ball sit still for one frame instead of jumping however long it took
     # to get from process start (or the rules screen) to here.
     last_update_time: int | None = None
+    # Set to a future timestamp after a miss; the ball stays out of play (and
+    # hidden) until then, so the next one doesn't drop in the instant the last
+    # was lost.
+    serve_at: int | None = None
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill((10, 10, 25))
@@ -103,17 +122,20 @@ class BreakoutState:
                     pygame.draw.rect(surface, ROW_COLORS[row % len(ROW_COLORS)], _brick_rect(row, col))
 
         pygame.draw.rect(surface, white, (self.paddle_x, PADDLE_Y, PADDLE_WIDTH, PADDLE_HEIGHT))
-        pygame.draw.circle(surface, white, (round(self.ball_x), round(self.ball_y)), BALL_RADIUS)
+        if self.serve_at is None:
+            pygame.draw.circle(surface, white, (round(self.ball_x), round(self.ball_y)), BALL_RADIUS)
 
-    def _lose_a_life(self) -> State | None:
+    def _lose_a_life(self, current_time: int) -> State | None:
         self.lives -= 1
         if self.lives <= 0:
+            _clear_control_leds()
             return BreakoutResultScreen(won=False)
-        self.ball_x, self.ball_y, self.ball_vx, self.ball_vy = _served_ball(self.paddle_x)
+        self.serve_at = current_time + SERVE_DELAY_MS
         return self
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
+            _clear_control_leds()
             return None  # back to the menu
 
         current_time = input.current_time
@@ -126,9 +148,17 @@ class BreakoutState:
         red_held = buttons[Color.RED].is_pressed()
         yellow_held = buttons[Color.YELLOW].is_pressed()
         turbo = buttons[Color.WHITE].is_pressed() and (red_held or yellow_held)
+        _light_control_leds(turbo)
         speed = PADDLE_SPEED * TURBO_MULTIPLIER if turbo else PADDLE_SPEED
         dx = (1 if yellow_held else 0) - (1 if red_held else 0)
         self.paddle_x = min(max(self.paddle_x + dx * speed * dt, PLAY_LEFT), PLAY_RIGHT - PADDLE_WIDTH)
+
+        if self.serve_at is not None:
+            if current_time < self.serve_at:
+                return self
+            self.ball_x, self.ball_y, self.ball_vx, self.ball_vy = _served_ball(self.paddle_x)
+            self.serve_at = None
+            return self
 
         self.ball_x += self.ball_vx * dt
         self.ball_y += self.ball_vy * dt
@@ -170,10 +200,11 @@ class BreakoutState:
             break
 
         if self.bricks_remaining <= 0:
+            _clear_control_leds()
             return BreakoutResultScreen(won=True)
 
         if self.ball_y - BALL_RADIUS > CANVAS_HEIGHT:
-            return self._lose_a_life()
+            return self._lose_a_life(current_time)
 
         return self
 
