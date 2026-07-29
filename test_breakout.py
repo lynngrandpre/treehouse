@@ -150,6 +150,23 @@ def test_white_led_lights_up_only_during_turbo():
     assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is True
 
 
+def test_blue_and_green_leds_stay_off_during_gameplay():
+    state = ticking(new_breakout())
+    state.next_state(held(current_time=50))
+    assert sim_gpio.get_output_state(buttons[Color.BLUE].led_pin) is False
+    assert sim_gpio.get_output_state(buttons[Color.GREEN].led_pin) is False
+
+
+def test_result_screen_lights_only_red_and_green():
+    state = BreakoutResultScreen(won=False, ready=True)
+    state.next_state(press(BLUE))
+    assert sim_gpio.get_output_state(buttons[Color.RED].led_pin) is True
+    assert sim_gpio.get_output_state(buttons[Color.GREEN].led_pin) is True
+    assert sim_gpio.get_output_state(buttons[Color.YELLOW].led_pin) is False
+    assert sim_gpio.get_output_state(buttons[Color.BLUE].led_pin) is False
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is False
+
+
 def test_control_leds_turn_off_when_the_game_ends():
     state = BreakoutState(
         paddle_x=300, ball_x=400, ball_y=CANVAS_HEIGHT - 5, ball_vx=0, ball_vy=200,

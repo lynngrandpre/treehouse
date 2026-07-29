@@ -68,17 +68,28 @@ def _brick_rect(row: int, col: int) -> pygame.Rect:
 
 
 def _light_control_leds(turbo: bool) -> None:
-    """Red/Yellow stay lit as a reminder those are the paddle controls; White
-    lights up only while turbo is engaged."""
+    """Only the buttons that do something during play stay lit: Red/Yellow as
+    a reminder those move the paddle, White only while turbo is engaged.
+    Blue and Green have no role here, so they stay off."""
     buttons[Color.RED].set_led(True)
     buttons[Color.YELLOW].set_led(True)
     buttons[Color.WHITE].set_led(turbo)
+    buttons[Color.GREEN].set_led(False)
+    buttons[Color.BLUE].set_led(False)
+
+
+def _light_result_leds() -> None:
+    """Green: Play Again, Red: Main Menu -- the only two live buttons here."""
+    buttons[Color.RED].set_led(True)
+    buttons[Color.GREEN].set_led(True)
+    buttons[Color.YELLOW].set_led(False)
+    buttons[Color.BLUE].set_led(False)
+    buttons[Color.WHITE].set_led(False)
 
 
 def _clear_control_leds() -> None:
-    buttons[Color.RED].set_led(False)
-    buttons[Color.YELLOW].set_led(False)
-    buttons[Color.WHITE].set_led(False)
+    for button in buttons.values():
+        button.set_led(False)
 
 
 def _served_ball(paddle_x: float) -> tuple[float, float, float, float]:
@@ -272,7 +283,10 @@ class BreakoutResultScreen:
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
+            _clear_control_leds()
             return None  # back to the menu
+
+        _light_result_leds()
 
         any_pressed = any(button.is_pressed() for button in input.buttons)
         if not any_pressed:
