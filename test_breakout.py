@@ -15,6 +15,8 @@ from breakout.game import (
     PLAY_RIGHT,
     SERVE_DELAY_MS,
     STARTING_LIVES,
+    TOTAL_BRICKS,
+    TURBO_DURATION_MS,
     TURBO_MULTIPLIER,
     BreakoutResultScreen,
     BreakoutState,
@@ -150,6 +152,30 @@ def test_white_led_lights_up_only_during_turbo():
     assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is True
 
 
+def test_turbo_stays_engaged_after_release_until_the_duration_elapses():
+    state = ticking(new_breakout())
+    state.next_state(held(WHITE, YELLOW, current_time=50))  # presses the combo
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is True
+
+    # Buttons released, but still within the 15-second turbo window.
+    state.next_state(held(current_time=50 + TURBO_DURATION_MS - 1))
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is True
+
+    # Window has now elapsed.
+    state.next_state(held(current_time=50 + TURBO_DURATION_MS))
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is False
+
+
+def test_pressing_turbo_again_extends_the_window():
+    state = ticking(new_breakout())
+    state.next_state(held(WHITE, YELLOW, current_time=50))
+    state.next_state(held(WHITE, YELLOW, current_time=1_000))  # re-pressed, resets the clock
+
+    # Would have expired under the first press's window, but not the second's.
+    state.next_state(held(current_time=50 + TURBO_DURATION_MS))
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is True
+
+
 def test_blue_and_green_leds_stay_off_during_gameplay():
     state = ticking(new_breakout())
     state.next_state(held(current_time=50))
@@ -158,7 +184,7 @@ def test_blue_and_green_leds_stay_off_during_gameplay():
 
 
 def test_result_screen_lights_only_red_and_green():
-    state = BreakoutResultScreen(won=False, ready=True)
+    state = BreakoutResultScreen(won=False, bricks_hit=12, ready=True)
     state.next_state(press(BLUE))
     assert sim_gpio.get_output_state(buttons[Color.RED].led_pin) is True
     assert sim_gpio.get_output_state(buttons[Color.GREEN].led_pin) is True
@@ -247,6 +273,7 @@ def test_clearing_the_last_brick_wins():
     result = state.next_state(held(current_time=1_010))
     assert isinstance(result, BreakoutResultScreen)
     assert result.won is True
+    assert result.bricks_hit == TOTAL_BRICKS
 
 
 def test_missing_the_ball_costs_a_life_and_starts_the_serve_delay():
@@ -298,6 +325,7 @@ def test_missing_the_ball_on_the_last_life_ends_the_game():
     result = state.next_state(held(current_time=1_100))
     assert isinstance(result, BreakoutResultScreen)
     assert result.won is False
+    assert result.bricks_hit == TOTAL_BRICKS - 5
 
 
 def test_big_red_button_returns_to_menu():
@@ -311,7 +339,7 @@ def test_big_red_button_returns_to_menu():
 
 
 def test_result_screen_ignores_the_confirm_press_still_held_then_exits_on_the_next_one():
-    state = BreakoutResultScreen(won=False)
+    state = BreakoutResultScreen(won=False, bricks_hit=12)
     still_held = state.next_state(press(BLUE))
     assert isinstance(still_held, BreakoutResultScreen)
     armed = still_held.next_state(release())
@@ -320,12 +348,12 @@ def test_result_screen_ignores_the_confirm_press_still_held_then_exits_on_the_ne
 
 
 def test_result_screen_green_starts_a_new_game():
-    state = BreakoutResultScreen(won=True, ready=True)
+    state = BreakoutResultScreen(won=True, bricks_hit=TOTAL_BRICKS, ready=True)
     new_state = state.next_state(press(GREEN))
     assert isinstance(new_state, BreakoutState)
     assert new_state.lives == STARTING_LIVES
 
 
 def test_result_screen_ignores_other_buttons():
-    state = BreakoutResultScreen(won=False, ready=True)
+    state = BreakoutResultScreen(won=False, bricks_hit=12, ready=True)
     assert isinstance(state.next_state(press(YELLOW)), BreakoutResultScreen)

@@ -22,12 +22,18 @@ CANVAS_WIDTH = 800
 CANVAS_HEIGHT = 480
 HUD_HEIGHT = 40
 
-# The playing field is narrower than the canvas and centered, with a solid
-# wall along each side -- the paddle and ball are confined between the walls'
-# inner faces rather than the canvas edges.
+# A score box sits to the right of the play area, so the field is centered
+# within the canvas *minus* that box rather than the full canvas -- the walls
+# flank the field, and the box fills the margin freed up beside it.
+SCORE_BOX_WIDTH = 160
+PLAY_REGION_WIDTH = CANVAS_WIDTH - SCORE_BOX_WIDTH
+SCORE_BOX_LEFT = CANVAS_WIDTH - SCORE_BOX_WIDTH
+SCORE_BOX_TOP = HUD_HEIGHT + 10
+SCORE_BOX_HEIGHT = 120
+
 WALL_THICKNESS = 14
-PLAY_AREA_WIDTH = 700
-PLAY_LEFT = (CANVAS_WIDTH - PLAY_AREA_WIDTH) // 2
+PLAY_AREA_WIDTH = 560
+PLAY_LEFT = (PLAY_REGION_WIDTH - PLAY_AREA_WIDTH) // 2
 PLAY_RIGHT = PLAY_LEFT + PLAY_AREA_WIDTH
 WALL_COLOR = (70, 70, 100)
 
@@ -39,12 +45,14 @@ BRICK_HEIGHT = 22
 BRICK_TOP = HUD_HEIGHT + 10
 BRICK_LEFT = PLAY_LEFT + (PLAY_AREA_WIDTH - (BRICK_COLS * BRICK_WIDTH + (BRICK_COLS - 1) * BRICK_GAP)) // 2
 ROW_COLORS = [(230, 60, 60), (230, 140, 50), (230, 210, 50), (70, 200, 90), (70, 150, 230)]
+TOTAL_BRICKS = BRICK_ROWS * BRICK_COLS
 
 PADDLE_WIDTH = 100
 PADDLE_HEIGHT = 14
 PADDLE_Y = CANVAS_HEIGHT - 40
 PADDLE_SPEED = 480  # pixels per second
 TURBO_MULTIPLIER = 2.0  # White held with Red or Yellow speeds the paddle up
+TURBO_DURATION_MS = 15_000  # pressing the combo latches turbo on for this long
 
 BALL_RADIUS = 8
 INITIAL_BALL_VX = 150
@@ -118,11 +126,15 @@ class BreakoutState:
     # hidden) until then, so the next one doesn't drop in the instant the last
     # was lost.
     serve_at: int | None = None
+    # Set to a future timestamp whenever the turbo combo is held; turbo stays
+    # engaged until that time passes, regardless of whether the buttons are
+    # still down, rather than cutting out the instant they're released.
+    turbo_until: int | None = None
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill((10, 10, 25))
         white = (255, 255, 255)
-        draw_text(surface, font(20), f"Lives: {self.lives}   Bricks: {self.bricks_remaining}", (110, 20), white)
+        draw_text(surface, font(20), f"Lives: {self.lives}", (80, 20), white)
 
         pygame.draw.rect(surface, WALL_COLOR, (PLAY_LEFT - WALL_THICKNESS, HUD_HEIGHT, WALL_THICKNESS, CANVAS_HEIGHT - HUD_HEIGHT))
         pygame.draw.rect(surface, WALL_COLOR, (PLAY_RIGHT, HUD_HEIGHT, WALL_THICKNESS, CANVAS_HEIGHT - HUD_HEIGHT))
@@ -136,11 +148,17 @@ class BreakoutState:
         if self.serve_at is None:
             pygame.draw.circle(surface, white, (round(self.ball_x), round(self.ball_y)), BALL_RADIUS)
 
+        score_box = pygame.Rect(SCORE_BOX_LEFT, SCORE_BOX_TOP, SCORE_BOX_WIDTH, SCORE_BOX_HEIGHT)
+        pygame.draw.rect(surface, WALL_COLOR, score_box, width=2)
+        draw_text(surface, font(20), "SCORE", (SCORE_BOX_LEFT + SCORE_BOX_WIDTH // 2, SCORE_BOX_TOP + 28), white)
+        bricks_hit = TOTAL_BRICKS - self.bricks_remaining
+        draw_text(surface, font(36), str(bricks_hit), (SCORE_BOX_LEFT + SCORE_BOX_WIDTH // 2, SCORE_BOX_TOP + 78), white)
+
     def _lose_a_life(self, current_time: int) -> State | None:
         self.lives -= 1
         if self.lives <= 0:
             _clear_control_leds()
-            return BreakoutResultScreen(won=False)
+            return BreakoutResultScreen(won=False, bricks_hit=TOTAL_BRICKS - self.bricks_remaining)
         self.serve_at = current_time + SERVE_DELAY_MS
         return self
 
@@ -158,7 +176,9 @@ class BreakoutState:
 
         red_held = buttons[Color.RED].is_pressed()
         yellow_held = buttons[Color.YELLOW].is_pressed()
-        turbo = buttons[Color.WHITE].is_pressed() and (red_held or yellow_held)
+        if buttons[Color.WHITE].is_pressed() and (red_held or yellow_held):
+            self.turbo_until = current_time + TURBO_DURATION_MS
+        turbo = self.turbo_until is not None and current_time < self.turbo_until
         _light_control_leds(turbo)
         speed = PADDLE_SPEED * TURBO_MULTIPLIER if turbo else PADDLE_SPEED
         dx = (1 if yellow_held else 0) - (1 if red_held else 0)
@@ -212,7 +232,7 @@ class BreakoutState:
 
         if self.bricks_remaining <= 0:
             _clear_control_leds()
-            return BreakoutResultScreen(won=True)
+            return BreakoutResultScreen(won=True, bricks_hit=TOTAL_BRICKS - self.bricks_remaining)
 
         if self.ball_y - BALL_RADIUS > CANVAS_HEIGHT:
             return self._lose_a_life(current_time)
@@ -236,7 +256,7 @@ class RulesScreen:
 
         lines = [
             ("Red = paddle left, Yellow = paddle right", white),
-            ("Hold White + Red/Yellow for a turbo speed boost", (255, 180, 60)),
+            ("Hold White + Red/Yellow for a 15-second turbo boost", (255, 180, 60)),
             ("The ball bounces on its own -- keep it in play.", white),
             ("Clear every brick to win.", white),
             (f"Miss the ball {STARTING_LIVES} times and it's game over.", white),
@@ -264,6 +284,7 @@ class RulesScreen:
 @dataclass
 class BreakoutResultScreen:
     won: bool
+    bricks_hit: int
     # Starts unarmed: the press (or the falling ball) that got us here may
     # still have a button held on the very first frame we're drawn. Require a
     # release first, same as the other games' result screens.
@@ -276,10 +297,11 @@ class BreakoutResultScreen:
         surface.fill((10, 10, 25))
         white = (255, 255, 255)
         headline = "You Win!" if self.won else "Game Over"
-        draw_text(surface, font(40), headline, (CANVAS_WIDTH // 2, 90), white)
-        draw_text(surface, font(26), self._message(), (CANVAS_WIDTH // 2, 150), white)
-        draw_text(surface, font(26), "Green: Play Again", (CANVAS_WIDTH // 2, 260), white)
-        draw_text(surface, font(26), "Red: Main Menu", (CANVAS_WIDTH // 2, 300), white)
+        draw_text(surface, font(64), headline, (CANVAS_WIDTH // 2, 90), white)
+        draw_text(surface, font(32), self._message(), (CANVAS_WIDTH // 2, 160), white)
+        draw_text(surface, font(32), f"Bricks hit: {self.bricks_hit} / {TOTAL_BRICKS}", (CANVAS_WIDTH // 2, 205), white)
+        draw_text(surface, font(30), "Green: Play Again", (CANVAS_WIDTH // 2, 300), white)
+        draw_text(surface, font(30), "Red: Main Menu", (CANVAS_WIDTH // 2, 340), white)
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
@@ -312,7 +334,7 @@ def new_breakout() -> BreakoutState:
         ball_vx=ball_vx,
         ball_vy=ball_vy,
         bricks=_new_bricks(),
-        bricks_remaining=BRICK_ROWS * BRICK_COLS,
+        bricks_remaining=TOTAL_BRICKS,
     )
 
 
