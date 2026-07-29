@@ -1,6 +1,7 @@
-"""Tetris: Red/Yellow slide the falling piece left and right, Green rotates it,
-Blue hard-drops it straight to the floor. Pieces fall on their own; clear full
-rows to score, and see how long you can last before the stack reaches the top.
+"""Tetris: Red/Blue slide the falling piece left and right, Green rotates it,
+White hard-drops it straight to the floor. Pieces fall on their own; clear
+full rows to score, and see how long you can last before the stack reaches
+the top.
 
 A single continuous state that mutates and returns itself every frame, in the
 "continuous game" style described in the README (see color_game) -- the board
@@ -85,7 +86,7 @@ PIECE_ROTATIONS = {name: _all_rotations(shape) for name, shape in PIECE_SHAPES.i
 
 LINE_SCORES = [0, 100, 300, 500, 800]  # indexed by lines cleared in one lock
 INITIAL_FALL_INTERVAL_MS = 800
-FALL_SPEEDUP_PER_LINES = 10  # every this many lines, the fall interval shortens
+FALL_SPEEDUP_PER_LINES = 25  # every this many lines, the fall interval shortens
 FALL_SPEEDUP_STEP_MS = 50
 MIN_FALL_INTERVAL_MS = 150
 MOVE_INITIAL_DELAY_MS = 200  # how long a held direction waits before repeating
@@ -103,13 +104,13 @@ def _piece_cells(piece_type: str, rotation: int, col: int, row: int) -> list[tup
 
 
 def _light_control_leds() -> None:
-    """Every button but White does something here, so every one but White
+    """Every button but Yellow does something here, so every one but Yellow
     stays lit as a reminder."""
     buttons[Color.RED].set_led(True)
-    buttons[Color.YELLOW].set_led(True)
+    buttons[Color.YELLOW].set_led(False)
     buttons[Color.GREEN].set_led(True)
     buttons[Color.BLUE].set_led(True)
-    buttons[Color.WHITE].set_led(False)
+    buttons[Color.WHITE].set_led(True)
 
 
 def _light_result_leds() -> None:
@@ -166,7 +167,7 @@ class TetrisState:
     move_repeat_at: int = 0
     last_move_dir: int = 0
     green_was_held: bool = False
-    blue_was_held: bool = False
+    white_was_held: bool = False
 
     def _fits(self, cells: list[tuple[int, int]]) -> bool:
         for col, row in cells:
@@ -259,14 +260,14 @@ class TetrisState:
         _light_control_leds()
 
         red_held = buttons[Color.RED].is_pressed()
-        yellow_held = buttons[Color.YELLOW].is_pressed()
-        green_held = buttons[Color.GREEN].is_pressed()
         blue_held = buttons[Color.BLUE].is_pressed()
+        green_held = buttons[Color.GREEN].is_pressed()
+        white_held = buttons[Color.WHITE].is_pressed()
 
         desired_dx = 0
-        if red_held and not yellow_held:
+        if red_held and not blue_held:
             desired_dx = -1
-        elif yellow_held and not red_held:
+        elif blue_held and not red_held:
             desired_dx = 1
 
         if desired_dx != 0:
@@ -282,11 +283,11 @@ class TetrisState:
             self._try_rotate()
         self.green_was_held = green_held
 
-        if blue_held and not self.blue_was_held:
+        if white_held and not self.white_was_held:
             if self._hard_drop():
                 _clear_control_leds()
                 return TetrisResultScreen(score=self.score, lines_cleared=self.lines_cleared)
-        self.blue_was_held = blue_held
+        self.white_was_held = white_held
 
         if current_time >= self.next_fall_at:
             if not self._try_move(0, 1):
@@ -313,8 +314,8 @@ class RulesScreen:
         draw_text(surface, font(48), "Tetris", (CANVAS_WIDTH // 2, 50), white)
 
         lines = [
-            ("Red = left, Yellow = right", white),
-            ("Green = rotate, Blue = drop", white),
+            ("Red = left, Blue = right", white),
+            ("Green = rotate, White = drop", white),
             ("Pieces fall on their own -- clear full rows to score.", white),
             ("The stack keeps rising -- see how long you can last.", white),
         ]

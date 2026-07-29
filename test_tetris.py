@@ -75,12 +75,12 @@ def test_new_tetris_starts_with_an_empty_board_and_zero_score():
     assert (state.piece_col, state.piece_row) == _spawn_position(state.piece_type)
 
 
-def test_yellow_moves_the_piece_right_and_red_moves_it_left():
+def test_blue_moves_the_piece_right_and_red_moves_it_left():
     state = new_tetris()
     state.piece_type = "O"
     state.piece_col, state.piece_row = 4, 0
 
-    result = state.next_state(held(YELLOW, current_time=1_000))
+    result = state.next_state(held(BLUE, current_time=1_000))
     assert result is state
     assert state.piece_col == 5
 
@@ -93,13 +93,13 @@ def test_holding_a_direction_repeats_after_the_initial_delay():
     state.piece_type = "O"
     state.piece_col, state.piece_row = 4, 0
 
-    state.next_state(held(YELLOW, current_time=1_000))
+    state.next_state(held(BLUE, current_time=1_000))
     assert state.piece_col == 5
 
-    state.next_state(held(YELLOW, current_time=1_000 + MOVE_INITIAL_DELAY_MS - 1))
+    state.next_state(held(BLUE, current_time=1_000 + MOVE_INITIAL_DELAY_MS - 1))
     assert state.piece_col == 5  # not yet time to repeat
 
-    state.next_state(held(YELLOW, current_time=1_000 + MOVE_INITIAL_DELAY_MS))
+    state.next_state(held(BLUE, current_time=1_000 + MOVE_INITIAL_DELAY_MS))
     assert state.piece_col == 6  # auto-shift kicked in
 
 
@@ -115,7 +115,7 @@ def test_horizontal_movement_is_clamped_within_the_board():
     assert state.piece_col == 0
 
     for _ in range(20):
-        state.next_state(held(YELLOW, current_time=t))
+        state.next_state(held(BLUE, current_time=t))
         t += MOVE_REPEAT_MS + 10
     assert state.piece_col == BOARD_COLS - 2  # O piece is 2 columns wide
 
@@ -145,12 +145,12 @@ def test_rotation_is_blocked_when_there_is_no_room():
     assert state.piece_rotation == 0
 
 
-def test_blue_hard_drops_the_piece_to_the_floor():
+def test_white_hard_drops_the_piece_to_the_floor():
     state = new_tetris()
     state.piece_type = "O"
     state.piece_col, state.piece_row = 4, 0
 
-    result = state.next_state(held(BLUE, current_time=1_000))
+    result = state.next_state(held(WHITE, current_time=1_000))
     assert result is state
     assert state.board[BOARD_ROWS - 1][4] == "O"
     assert state.board[BOARD_ROWS - 1][5] == "O"
@@ -167,7 +167,7 @@ def test_completing_a_row_clears_it_and_scores():
     state.piece_type = "O"
     state.piece_col, state.piece_row = 0, 0
 
-    result = state.next_state(held(BLUE, current_time=1_000))
+    result = state.next_state(held(WHITE, current_time=1_000))
     assert result is state
     assert state.lines_cleared == 1
     assert state.score == LINE_SCORES[1]
@@ -188,7 +188,7 @@ def test_locking_a_piece_with_no_room_to_spawn_ends_the_game():
     state.board[0][0] = state.board[0][1] = None
     state.board[1][0] = state.board[1][1] = None
 
-    result = state.next_state(held(BLUE, current_time=1_000))
+    result = state.next_state(held(WHITE, current_time=1_000))
     assert isinstance(result, TetrisResultScreen)
     assert result.lines_cleared == 0
 
@@ -205,11 +205,12 @@ def test_control_leds_turn_off_when_the_game_ends():
     state.board[0][0] = state.board[0][1] = None
     state.board[1][0] = state.board[1][1] = None
 
-    state.next_state(held(BLUE, current_time=1_000))
+    state.next_state(held(WHITE, current_time=1_000))
     assert sim_gpio.get_output_state(buttons[Color.RED].led_pin) is False
     assert sim_gpio.get_output_state(buttons[Color.YELLOW].led_pin) is False
     assert sim_gpio.get_output_state(buttons[Color.GREEN].led_pin) is False
     assert sim_gpio.get_output_state(buttons[Color.BLUE].led_pin) is False
+    assert sim_gpio.get_output_state(buttons[Color.WHITE].led_pin) is False
 
 
 def test_big_red_button_returns_to_menu():
