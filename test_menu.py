@@ -45,12 +45,11 @@ def click(state: MenuState, index: int) -> MenuState:
     return released
 
 
-# These tests assume fourteen games across five pages of three (the last page
-# holds the two leftover games). If the roster changes so the menu stops
-# paginating, that's a different design and these pagination tests should be
-# revisited.
+# These tests assume fifteen games across five full pages of three. If the
+# roster changes so the menu stops paginating, that's a different design and
+# these pagination tests should be revisited.
 def test_roster_is_paginated():
-    assert len(menu.all_games) == 14
+    assert len(menu.all_games) == 15
     assert MenuState()._paginated()
 
 
@@ -87,9 +86,9 @@ def test_next_three_times_reaches_page_three():
 def test_next_four_times_reaches_the_last_page():
     state = click(click(click(click(MenuState(), 4), 4), 4), 4)
     assert state.page == 4
-    # Last page holds the two leftover games, so the right arrow slot is
-    # blank rather than a live ">".
-    assert options(state) == ["<", "Breakout", "Space Invaders", ""]
+    # Last page is a full page of three, so the right arrow slot is blank
+    # rather than a live ">".
+    assert options(state) == ["<", "Breakout", "Space Invaders", "Tetris", ""]
 
 
 def test_next_clamps_on_last_page():
@@ -133,10 +132,10 @@ def test_first_page_lights_only_the_games_and_the_next_arrow():
     assert led_states(MenuState()) == [False, True, True, True, True]
 
 
-def test_last_page_lights_the_prev_arrow_and_both_games():
-    # ["<", "Breakout", "Space Invaders", ""] -- the one unused trailing slot stays dark.
+def test_last_page_lights_the_prev_arrow_and_all_three_games():
+    # ["<", "Breakout", "Space Invaders", "Tetris", ""] -- the blank ">" slot stays dark.
     state = click(click(click(click(MenuState(), 4), 4), 4), 4)
-    assert led_states(state) == [True, True, True, False, False]
+    assert led_states(state) == [True, True, True, True, False]
 
 
 def test_arrow_button_does_not_start_a_game():
