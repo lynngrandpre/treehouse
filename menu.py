@@ -1,7 +1,9 @@
-"""The home screen: lists every game exposed by the game directories below and lets
-the player pick one. Adding a new game means building its state machine in a new
-directory (see quiz/ and color_game/ for the pattern), exposing it as a `Game` from
-that directory's __init__.py, and importing it here.
+"""The home screen: groups every game exposed by the game directories below
+into a couple of categories, lets the player pick a category, then pick a
+game within it. Adding a new game means building its state machine in a new
+directory (see quiz/ and color_game/ for the pattern), exposing it as a
+`Game` from that directory's __init__.py, importing it here, and adding it
+to the right category below.
 """
 
 from __future__ import annotations
@@ -21,18 +23,68 @@ import tetris
 import tower_defense
 import vault
 from common import AnswerPicker, Game, GetReadyScreen, Input, State, draw_text, font
-from hardware import buttons_in_order
+from hardware import big_red_button_pressed, buttons_in_order
 
 GAMES_PER_PAGE = 3
 
-all_games = (
-    color_game.games + quiz.games + mastermind.games + chain.games + pacman.games + vault.games + breakout.games
-    + space_invaders.games + tetris.games + tower_defense.games
-)
+
+@dataclass
+class Category:
+    name: str
+    games: list[Game]
+
+
+categories = [
+    Category("Quiz Games", color_game.games + quiz.games + mastermind.games + chain.games),
+    Category(
+        "Arcade Games",
+        pacman.games + vault.games + breakout.games + space_invaders.games + tetris.games + tower_defense.games,
+    ),
+]
 
 
 @dataclass
-class MenuState:
+class CategoryMenuState:
+    """The top-level screen: pick a category to see the games in it. There
+    are only ever a handful of categories, so unlike GameMenuState this
+    never needs to paginate."""
+
+    def _options_picker(self) -> AnswerPicker[Category]:
+        return AnswerPicker([category.name for category in categories], categories)
+
+    def draw(self, surface: pygame.Surface) -> None:
+        CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
+        draw_text(surface, font(60), "Choose a Category", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 3))
+        self._options_picker().draw(surface)
+
+    def _light_available_leds(self) -> None:
+        options = self._options_picker().options
+        for i, button in enumerate(buttons_in_order):
+            button.set_led(i < len(options))
+
+    def next_state(self, input: Input) -> State | None:
+        self._light_available_leds()
+
+        any_pressed = any(button.is_pressed() for button in input.buttons)
+        if not any_pressed:
+            return self
+
+        selection = self._options_picker().selection(input)
+        if isinstance(selection, Category):
+            # Not ready yet -- the press that picked this category may still be
+            # held on the very first frame here, and GameMenuState's own slots
+            # mean something totally different. Wait for release before acting,
+            # same debounce it already uses between page turns.
+            return GameMenuState(category=selection, ready=False)
+        return self
+
+
+@dataclass
+class GameMenuState:
+    """The games within one category. The big red button steps back up to
+    the category list, the same "go back" role it plays inside a game."""
+
+    category: Category
     page: int = 0
     # False right after a page turn, until every button is released again. The
     # game loop calls next_state every frame, so without this a single held
@@ -40,13 +92,13 @@ class MenuState:
     ready: bool = True
 
     def _paginated(self) -> bool:
-        return len(all_games) > 5
+        return len(self.category.games) > 5
 
     def _games_this_page(self) -> list[Game]:
         if not self._paginated():
-            return all_games
+            return self.category.games
         start = self.page * GAMES_PER_PAGE
-        return all_games[start:start + GAMES_PER_PAGE]
+        return self.category.games[start:start + GAMES_PER_PAGE]
 
     def _options_picker(self) -> AnswerPicker[Game | str]:
         games_this_page = self._games_this_page()
@@ -55,14 +107,14 @@ class MenuState:
             values: list[Game | str] = list(games_this_page)
         else:
             left = ["<"] if self.page > 0 else [""]
-            right = [">"] if self.page < (len(all_games) - 1) // GAMES_PER_PAGE else [""]
+            right = [">"] if self.page < (len(self.category.games) - 1) // GAMES_PER_PAGE else [""]
             options = left + [g.name for g in games_this_page] + right
             values = ["prev"] + list(games_this_page) + ["next"]
         return AnswerPicker(options, values)
 
     def draw(self, surface: pygame.Surface) -> None:
         CANVAS_WIDTH, CANVAS_HEIGHT = surface.get_size()
-        draw_text(surface, font(60), "Choose a Game", (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 3))
+        draw_text(surface, font(60), self.category.name, (CANVAS_WIDTH // 2, CANVAS_HEIGHT // 3))
         self._options_picker().draw(surface)
 
     def _light_available_leds(self) -> None:
@@ -74,6 +126,9 @@ class MenuState:
             button.set_led(i < len(options) and options[i] != "")
 
     def next_state(self, input: Input) -> State | None:
+        if big_red_button_pressed():
+            return CategoryMenuState()
+
         self._light_available_leds()
 
         any_pressed = any(button.is_pressed() for button in input.buttons)
@@ -89,7 +144,7 @@ class MenuState:
         if selection == "prev":
             return replace(self, page=max(0, self.page - 1), ready=False)
         elif selection == "next":
-            last_page = (len(all_games) - 1) // GAMES_PER_PAGE
+            last_page = (len(self.category.games) - 1) // GAMES_PER_PAGE
             return replace(self, page=min(last_page, self.page + 1), ready=False)
         elif isinstance(selection, Game):
             return GetReadyScreen(selection.initial_state)
@@ -97,5 +152,5 @@ class MenuState:
             return self
 
 
-def home() -> MenuState:
-    return MenuState()
+def home() -> CategoryMenuState:
+    return CategoryMenuState()
