@@ -15,6 +15,7 @@ import pygame
 import breakout
 import chain
 import color_game
+import flags
 import mastermind
 import pacman
 import quiz
@@ -35,7 +36,7 @@ class Category:
 
 
 categories = [
-    Category("Quiz Games", color_game.games + quiz.games + mastermind.games + chain.games),
+    Category("Quiz Games", color_game.games + quiz.games + mastermind.games + chain.games + flags.games),
     Category(
         "Arcade Games",
         pacman.games + vault.games + breakout.games + space_invaders.games + tetris.games + tower_defense.games,

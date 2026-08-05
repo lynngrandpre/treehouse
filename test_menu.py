@@ -62,12 +62,13 @@ def arcade_games_menu() -> GameMenuState:
     return released
 
 
-# These tests assume two categories: nine Quiz Games across three full pages
-# of three, and seven Arcade Games across two full pages plus a final page of
-# one. If the roster changes, these pagination tests should be revisited.
+# These tests assume two categories: fourteen Quiz Games across four full
+# pages of three plus a final page of two, and seven Arcade Games across two
+# full pages plus a final page of one. If the roster changes, these
+# pagination tests should be revisited.
 def test_categories_cover_every_game():
     assert [c.name for c in menu.categories] == ["Quiz Games", "Arcade Games"]
-    assert len(menu.categories[0].games) == 9
+    assert len(menu.categories[0].games) == 14
     assert len(menu.categories[1].games) == 7
 
 
@@ -101,24 +102,38 @@ def test_quiz_games_next_advances_exactly_one_page():
     assert options(page1) == ["<", "Capitals HARD", "Capitals", "Sports", ">"]
 
 
-def test_quiz_games_next_twice_reaches_the_last_page():
+def test_quiz_games_next_twice_reaches_a_middle_page():
     state = click(click(quiz_games_menu(), 4), 4)
     assert state.page == 2
-    # Last page is a full page of three, so the right arrow slot is blank
+    assert options(state) == ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ">"]
+
+
+def test_quiz_games_next_four_times_reaches_the_last_page():
+    state = quiz_games_menu()
+    for _ in range(4):
+        state = click(state, 4)
+    assert state.page == 4
+    # Last page has only two games, so the right arrow slot is blank
     # rather than a live ">".
-    assert options(state) == ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ""]
+    assert options(state) == ["<", "Americas Flags", "Oceania Flags", ""]
 
 
 def test_quiz_games_next_clamps_on_the_last_page():
-    state = click(click(click(quiz_games_menu(), 4), 4), 4)
-    assert state.page == 2
+    state = quiz_games_menu()
+    for _ in range(6):  # two more presses than there are pages
+        state = click(state, 4)
+    assert state.page == 4
 
 
 def test_quiz_games_prev_goes_back_and_clamps_at_zero():
-    state = click(click(quiz_games_menu(), 4), 4)  # to page 2
-    state = click(state, 0)                        # leftmost button = "<"
-    assert state.page == 1
-    state = click(click(state, 0), 0)               # back to 0, then try to go past it
+    state = quiz_games_menu()
+    for _ in range(4):
+        state = click(state, 4)  # to the last page
+    assert state.page == 4
+    state = click(state, 0)     # leftmost button = "<"
+    assert state.page == 3
+    for _ in range(5):          # more presses than needed, should clamp at 0
+        state = click(state, 0)
     assert state.page == 0
 
 
@@ -156,10 +171,18 @@ def test_quiz_games_first_page_lights_only_the_games_and_the_next_arrow():
     assert led_states(quiz_games_menu()) == [False, True, True, True, True]
 
 
-def test_quiz_games_last_page_lights_the_prev_arrow_and_all_three_games():
-    # ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ""] -- blank ">" slot stays dark.
+def test_quiz_games_middle_page_lights_all_five_slots():
+    # ["<", "Jeopardy!", "Mastermind", "Chain Reaction", ">"] -- every slot is live.
     state = click(click(quiz_games_menu(), 4), 4)
-    assert led_states(state) == [True, True, True, True, False]
+    assert led_states(state) == [True, True, True, True, True]
+
+
+def test_quiz_games_last_page_lights_the_prev_arrow_and_two_games():
+    # ["<", "Flags: Americas", "Flags: Oceania", ""] -- blank ">" slot stays dark.
+    state = quiz_games_menu()
+    for _ in range(4):
+        state = click(state, 4)
+    assert led_states(state) == [True, True, True, False, False]
 
 
 def test_arrow_button_does_not_start_a_game():
