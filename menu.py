@@ -19,6 +19,7 @@ import flags
 import mastermind
 import pacman
 import quiz
+import simon
 import space_invaders
 import tetris
 import tower_defense
@@ -39,7 +40,7 @@ categories = [
     Category("Quiz Games", color_game.games + quiz.games + mastermind.games + chain.games + flags.games),
     Category(
         "Arcade Games",
-        pacman.games + vault.games + breakout.games + space_invaders.games + tetris.games + tower_defense.games,
+        pacman.games + vault.games + breakout.games + space_invaders.games + tetris.games + tower_defense.games + simon.games,
     ),
 ]
 
