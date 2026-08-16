@@ -43,6 +43,11 @@ _BUTTON_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]
 
 IDLE_TIMEOUT_MS = 5 * 60 * 1000  # blank the screen and LEDs after this long with no button touched
 
+STARTUP_CHASE_STEP_MS = 80  # how long each LED stays lit while chasing across the buttons
+STARTUP_FLASH_COUNT = 3  # how many times all LEDs flash together at the end of the show
+STARTUP_FLASH_ON_MS = 150
+STARTUP_FLASH_OFF_MS = 150
+
 
 @dataclass
 class IdleMonitor:
@@ -116,6 +121,39 @@ def _draw_simulator_chrome(window: pygame.Surface, device_surface: pygame.Surfac
         window.blit(label, label.get_rect(center=rect.center))
 
 
+def _startup_light_show(window: pygame.Surface, device_surface: pygame.Surface, button_rects: list[pygame.Rect] | None) -> bool:
+    """A little chase-then-flash flourish across the button LEDs, played once before the
+    menu loads. Returns False if the window was closed partway through the show, so `run`
+    can skip straight to cleanup instead of starting the game loop."""
+
+    def frame(delay_ms: int) -> bool:
+        if SIMULATOR:
+            assert button_rects is not None
+            _draw_simulator_chrome(window, device_surface, button_rects)
+            pygame.display.flip()
+        pygame.time.delay(delay_ms)
+        return not any(event.type == pygame.QUIT for event in pygame.event.get())
+
+    for _ in range(2):
+        for button in buttons_in_order + list(reversed(buttons_in_order)):
+            button.set_led(True)
+            if not frame(STARTUP_CHASE_STEP_MS):
+                return False
+            button.set_led(False)
+
+    for _ in range(STARTUP_FLASH_COUNT):
+        for button in buttons.values():
+            button.set_led(True)
+        if not frame(STARTUP_FLASH_ON_MS):
+            return False
+        for button in buttons.values():
+            button.set_led(False)
+        if not frame(STARTUP_FLASH_OFF_MS):
+            return False
+
+    return True
+
+
 def run(initial_state: State) -> None:
     """Runs the game loop until the window is closed or Escape is pressed.
 
@@ -124,6 +162,7 @@ def run(initial_state: State) -> None:
     """
     pygame.init()
     try:
+        button_rects = None
         if SIMULATOR:
             button_rects = _button_rects()
             window = pygame.display.set_mode(
@@ -135,9 +174,10 @@ def run(initial_state: State) -> None:
             device_surface = window
             pygame.mouse.set_visible(False)
 
+        game_over = not _startup_light_show(window, device_surface, button_rects)
+
         state = initial_state
         idle_monitor = IdleMonitor()
-        game_over = False
         while not game_over:
             if SIMULATOR:
                 _update_simulated_input(button_rects)
