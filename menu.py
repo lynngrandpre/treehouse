@@ -17,6 +17,7 @@ import breakout
 import chain
 import color_game
 import flags
+import math_blaster
 import mastermind
 import pacman
 import quiz
@@ -48,7 +49,8 @@ categories = [
         + tetris.games
         + tower_defense.games
         + simon.games
-        + ball_machine.games,
+        + ball_machine.games
+        + math_blaster.games,
     ),
 ]
 

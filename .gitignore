@@ -5,3 +5,4 @@ __pycache__/
 .restart-token
 .deploy-key
 .deploy-key.pub
+math_blaster/data/progress.json

@@ -63,13 +63,13 @@ def arcade_games_menu() -> GameMenuState:
 
 
 # These tests assume two categories: fourteen Quiz Games across four full
-# pages of three plus a final page of two, and ten Arcade Games across three
-# full pages of three plus a final page of one. If the roster changes, these
-# pagination tests should be revisited.
+# pages of three plus a final page of two, and eleven Arcade Games across
+# three full pages of three plus a final page of two. If the roster changes,
+# these pagination tests should be revisited.
 def test_categories_cover_every_game():
     assert [c.name for c in menu.categories] == ["Quiz Games", "Arcade Games"]
     assert len(menu.categories[0].games) == 14
-    assert len(menu.categories[1].games) == 10
+    assert len(menu.categories[1].games) == 11
 
 
 def test_category_menu_lists_the_categories():
@@ -155,10 +155,10 @@ def test_arcade_games_third_page_is_a_full_page_of_three():
     assert options(state) == ["<", "Papa Tetris: Bomb", "Tower Defense Duo", "Simon Says", ">"]
 
 
-def test_arcade_games_last_page_holds_the_one_game_that_spilled_over():
+def test_arcade_games_last_page_holds_the_two_games_that_spilled_over():
     state = click(click(click(arcade_games_menu(), 4), 4), 4)
     assert state.page == 3
-    assert options(state) == ["<", "Ball Machine", ""]
+    assert options(state) == ["<", "Ball Machine", "Math Blaster", ""]
 
 
 def test_selecting_a_game_starts_it_via_get_ready():
