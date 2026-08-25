@@ -6,6 +6,7 @@ import sim_gpio
 from common import Input
 from hardware import BIG_RED_BUTTON_PIN, Color, buttons, buttons_in_order
 from tower_defense.game import (
+    ENEMY_START_X,
     LANES,
     STARTING_LIVES,
     TOWER_X,
@@ -151,7 +152,7 @@ def test_answering_an_empty_lane_does_nothing():
     assert state.score == 0
 
 
-def test_an_enemy_reaching_the_tower_costs_a_life():
+def test_an_enemy_reaching_the_tower_costs_a_life_and_repeats_its_problem():
     state = new_tower_defense()
     state.next_state(held(current_time=1_000))
     lane = 0
@@ -159,7 +160,10 @@ def test_an_enemy_reaching_the_tower_costs_a_life():
 
     result = state.next_state(held(current_time=1_500))
     assert result is state
-    assert state.lanes[lane] is None
+    assert state.lanes[lane] is not None
+    assert state.lanes[lane].text == "1 + 1"
+    assert state.lanes[lane].correct_answer == 2
+    assert state.lanes[lane].x == ENEMY_START_X
     assert state.lives == STARTING_LIVES - 1
 
 

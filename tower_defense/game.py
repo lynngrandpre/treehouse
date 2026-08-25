@@ -1,9 +1,10 @@
 """Tower Defense Duo: Player 1 aims the tower with Red (up a lane) and Green
 (down a lane); Player 2 answers the aimed lane's math problem with Blue,
 Yellow, or White. The correct answer fires and destroys the enemy; a wrong
-guess does nothing. Let an enemy reach the tower and it costs a life -- lose
-them all and the game's over. Enemies get faster and their problems get
-harder the more you solve, so see how long the two of you can hold out.
+guess does nothing. Let an enemy reach the tower and it costs a life -- and
+sends that same enemy back around with the same problem, so it has to be
+answered eventually. Lose all your lives and the game's over. Enemies get
+faster the more you solve, so see how long the two of you can hold out.
 
 A single continuous state that mutates and returns itself every frame, in the
 "continuous game" style described in the README (see color_game) -- the
@@ -81,30 +82,11 @@ def _spawn_interval_ms(score: int) -> int:
     return max(MIN_SPAWN_INTERVAL_MS, BASE_SPAWN_INTERVAL_MS - _difficulty_tier(score) * SPAWN_SPEEDUP_STEP_MS)
 
 
-def _generate_problem(score: int) -> tuple[str, int]:
-    """Bigger numbers and harder operations the more problems have been solved."""
-    tier = _difficulty_tier(score)
-    if tier == 0:
-        a, b = random.randint(1, 10), random.randint(1, 10)
-        return f"{a} + {b}", a + b
-    elif tier == 1:
-        a, b = random.randint(1, 15), random.randint(1, 15)
-        if random.choice([True, False]):
-            return f"{a} + {b}", a + b
-        a, b = max(a, b), min(a, b)
-        return f"{a} - {b}", a - b
-    else:
-        op = random.choice(["+", "-", "x"])
-        if op == "+":
-            a, b = random.randint(5, 25), random.randint(5, 25)
-            return f"{a} + {b}", a + b
-        elif op == "-":
-            a, b = random.randint(1, 30), random.randint(1, 30)
-            a, b = max(a, b), min(a, b)
-            return f"{a} - {b}", a - b
-        else:
-            a, b = random.randint(2, 12), random.randint(2, 12)
-            return f"{a} x {b}", a * b
+def _generate_problem() -> tuple[str, int]:
+    """Addition only, always summing to 10 or less."""
+    a = random.randint(1, 9)
+    b = random.randint(1, 10 - a)
+    return f"{a} + {b}", a + b
 
 
 def _generate_choices(correct: int) -> list[int]:
@@ -173,7 +155,7 @@ def _draw_enemy(surface: pygame.Surface, enemy: Enemy, lane: int) -> None:
         pygame.draw.circle(surface, (255, 255, 255), eye_center, 7)
         pygame.draw.circle(surface, (10, 10, 10), eye_center, 3)
 
-    draw_text(surface, font(26), enemy.text, (cx, cy + 11), _readable_text_color(ENEMY_BODY_COLOR))
+    draw_text(surface, font(30), enemy.text, (cx, cy + 11), _readable_text_color(ENEMY_BODY_COLOR))
 
 
 @dataclass
@@ -212,7 +194,7 @@ class TowerDefenseState:
         if not empty_lanes:
             return
         lane = random.choice(empty_lanes)
-        text, answer = _generate_problem(self.score)
+        text, answer = _generate_problem()
         self.lanes[lane] = Enemy(x=ENEMY_START_X, text=text, correct_answer=answer, choices=_generate_choices(answer))
 
     def draw(self, surface: pygame.Surface) -> None:
@@ -260,7 +242,7 @@ class TowerDefenseState:
             slot_rect = pygame.Rect(slot_width * i + 15, bar_top + 12, slot_width - 30, ANSWER_BAR_HEIGHT - 24)
             button_color = buttons[color].rgb.to_tuple()
             pygame.draw.rect(surface, button_color, slot_rect, border_radius=10)
-            draw_text(surface, font(36), text, slot_rect.center, _readable_text_color(button_color))
+            draw_text(surface, font(40), text, slot_rect.center, _readable_text_color(button_color))
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
@@ -299,12 +281,15 @@ class TowerDefenseState:
                 continue
             enemy.x -= speed * dt
             if enemy.x <= TOWER_X:
-                self.lanes[lane] = None
                 self.lives -= 1
                 self.breach_flash_until = current_time + BREACH_FLASH_MS
                 if self.lives <= 0:
+                    self.lanes[lane] = None
                     _clear_control_leds()
                     return TowerDefenseResultScreen(score=self.score)
+                # Send it back around with the same problem instead of a fresh
+                # one, so a problem that got through has to be answered eventually.
+                self.lanes[lane] = replace(enemy, x=ENEMY_START_X)
 
         if current_time >= self.next_spawn_at:
             self._spawn_enemy()
