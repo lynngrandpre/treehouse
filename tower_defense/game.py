@@ -33,10 +33,23 @@ LANE_HEIGHT = (PLAY_BOTTOM - PLAY_TOP) // LANES
 
 TOWER_X = 70
 ENEMY_START_X = CANVAS_WIDTH - 50
-ENEMY_WIDTH = 60
-ENEMY_HEIGHT = 36
+ENEMY_WIDTH = 70
+ENEMY_HEIGHT = 46
 LANE_COLOR = (55, 55, 85)
 AIMED_LANE_COLOR = (85, 85, 130)
+
+ENEMY_BODY_COLOR = (70, 195, 110)
+ENEMY_OUTLINE_COLOR = (20, 60, 30)
+ENEMY_ANTENNA_COLOR = (255, 210, 70)
+
+# The line an enemy must be destroyed before crossing -- reaching it costs a life.
+KILL_LINE_COLOR = (255, 90, 60)
+KILL_LINE_WIDTH = 6
+
+# A brief red wash over the playfield when an enemy gets through, so a life loss
+# is impossible to miss even if you weren't looking right at that lane.
+BREACH_FLASH_MS = 350
+BREACH_FLASH_COLOR = (255, 40, 40, 70)
 
 STARTING_LIVES = 3
 
@@ -130,6 +143,39 @@ def _lane_center_y(lane: int) -> int:
     return PLAY_TOP + lane * LANE_HEIGHT + LANE_HEIGHT // 2
 
 
+def _readable_text_color(background: tuple[int, int, int]) -> tuple[int, int, int]:
+    """Black or white, whichever reads better against the given background --
+    keeps answer-bar and enemy text legible regardless of button/body color."""
+    r, g, b = background
+    luminance = 0.299 * r + 0.587 * g + 0.114 * b
+    return (15, 15, 15) if luminance > 140 else (255, 255, 255)
+
+
+def _draw_enemy(surface: pygame.Surface, enemy: Enemy, lane: int) -> None:
+    """A little antenna'd alien standing in for the plain rectangle enemies used
+    to be -- its belly carries the math problem, drawn large and high-contrast."""
+    center = (round(enemy.x), _lane_center_y(lane))
+    cx, cy = center
+
+    body_rect = pygame.Rect(0, 0, ENEMY_WIDTH, ENEMY_HEIGHT)
+    body_rect.center = center
+    pygame.draw.ellipse(surface, ENEMY_BODY_COLOR, body_rect)
+    pygame.draw.ellipse(surface, ENEMY_OUTLINE_COLOR, body_rect, 3)
+
+    for dx in (-14, 14):
+        base = (cx + dx, body_rect.top + 6)
+        tip = (cx + dx * 1.6, body_rect.top - 12)
+        pygame.draw.line(surface, ENEMY_OUTLINE_COLOR, base, tip, 3)
+        pygame.draw.circle(surface, ENEMY_ANTENNA_COLOR, tip, 4)
+
+    for dx in (-16, 16):
+        eye_center = (cx + dx, cy - 14)
+        pygame.draw.circle(surface, (255, 255, 255), eye_center, 7)
+        pygame.draw.circle(surface, (10, 10, 10), eye_center, 3)
+
+    draw_text(surface, font(26), enemy.text, (cx, cy + 11), _readable_text_color(ENEMY_BODY_COLOR))
+
+
 @dataclass
 class Enemy:
     x: float
@@ -148,6 +194,7 @@ class TowerDefenseState:
     # actual timestamp rather than whatever time it was at import.
     next_spawn_at: int | None = None
     last_update_time: int | None = None
+    breach_flash_until: int = 0
     red_was_held: bool = False
     green_was_held: bool = False
     blue_was_held: bool = False
@@ -180,6 +227,9 @@ class TowerDefenseState:
             pygame.draw.rect(surface, AIMED_LANE_COLOR if lane == self.current_lane else LANE_COLOR, rect)
             pygame.draw.line(surface, (20, 20, 40), (TOWER_X, top), (CANVAS_WIDTH - 20, top), 2)
 
+        # The kill line: an enemy destroyed before crossing this is a win, past it costs a life.
+        pygame.draw.line(surface, KILL_LINE_COLOR, (TOWER_X, PLAY_TOP), (TOWER_X, PLAY_BOTTOM), KILL_LINE_WIDTH)
+
         turret_y = _lane_center_y(self.current_lane)
         pygame.draw.polygon(
             surface, (230, 230, 230),
@@ -187,12 +237,15 @@ class TowerDefenseState:
         )
 
         for lane, enemy in enumerate(self.lanes):
-            if enemy is None:
-                continue
-            rect = pygame.Rect(0, 0, ENEMY_WIDTH, ENEMY_HEIGHT)
-            rect.center = (round(enemy.x), _lane_center_y(lane))
-            pygame.draw.rect(surface, (230, 90, 90), rect, border_radius=8)
-            draw_text(surface, font(22), enemy.text, rect.center, (20, 20, 20))
+            if enemy is not None:
+                _draw_enemy(surface, enemy, lane)
+
+        # last_update_time tracks the clock frame-by-frame in next_state, so by the
+        # time draw() runs it's effectively "now" -- good enough to time this flash.
+        if (self.last_update_time or 0) < self.breach_flash_until:
+            flash = pygame.Surface((CANVAS_WIDTH, PLAY_BOTTOM - PLAY_TOP), pygame.SRCALPHA)
+            flash.fill(BREACH_FLASH_COLOR)
+            surface.blit(flash, (0, PLAY_TOP))
 
         self._draw_answer_bar(surface)
 
@@ -205,8 +258,9 @@ class TowerDefenseState:
         for i, color in enumerate(ANSWER_BUTTONS):
             text = str(enemy.choices[i]) if enemy is not None else "-"
             slot_rect = pygame.Rect(slot_width * i + 15, bar_top + 12, slot_width - 30, ANSWER_BAR_HEIGHT - 24)
-            pygame.draw.rect(surface, buttons[color].rgb.to_tuple(), slot_rect, border_radius=10)
-            draw_text(surface, font(28), text, slot_rect.center, (20, 20, 20))
+            button_color = buttons[color].rgb.to_tuple()
+            pygame.draw.rect(surface, button_color, slot_rect, border_radius=10)
+            draw_text(surface, font(36), text, slot_rect.center, _readable_text_color(button_color))
 
     def next_state(self, input: Input) -> State | None:
         if big_red_button_pressed():
@@ -247,6 +301,7 @@ class TowerDefenseState:
             if enemy.x <= TOWER_X:
                 self.lanes[lane] = None
                 self.lives -= 1
+                self.breach_flash_until = current_time + BREACH_FLASH_MS
                 if self.lives <= 0:
                     _clear_control_leds()
                     return TowerDefenseResultScreen(score=self.score)
