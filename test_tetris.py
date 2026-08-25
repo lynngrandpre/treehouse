@@ -259,13 +259,17 @@ def test_bomb_mode_bomb_becomes_ready_after_enough_lines():
     assert state.bomb_ready is True
 
 
-def test_yellow_detonates_a_ready_bomb_removing_five_rows():
+def test_big_red_detonates_a_ready_bomb_removing_random_rows():
     state = new_tetris(bomb_mode=True)
     state.lines_cleared = BOMB_LINES_PER_CHARGE
     for row in range(BOARD_ROWS):
         state.board[row][0] = "Z"
 
-    result = state.next_state(held(YELLOW, current_time=1_000))
+    sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, True)
+    try:
+        result = state.next_state(held(current_time=1_000))
+    finally:
+        sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, False)
     assert result is state
     assert state.bombs_used == 1
     assert state.bomb_ready is False
@@ -274,14 +278,51 @@ def test_yellow_detonates_a_ready_bomb_removing_five_rows():
     assert state.board[0] == [None] * BOARD_COLS
 
 
-def test_yellow_does_nothing_without_a_ready_bomb():
+def test_big_red_does_nothing_without_a_ready_bomb():
     state = new_tetris(bomb_mode=True)
     for row in range(BOARD_ROWS):
         state.board[row][0] = "Z"
 
-    state.next_state(held(YELLOW, current_time=1_000))
+    sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, True)
+    try:
+        result = state.next_state(held(current_time=1_000))
+    finally:
+        sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, False)
+    assert result is state
     assert state.bombs_used == 0
     assert all(row[0] == "Z" for row in state.board)
+
+
+def test_big_red_no_longer_quits_bomb_mode():
+    state = new_tetris(bomb_mode=True)
+    sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, True)
+    try:
+        result = state.next_state(held(current_time=1_000))
+    finally:
+        sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, False)
+    assert result is state
+
+
+def test_yellow_and_white_together_quit_bomb_mode():
+    state = new_tetris(bomb_mode=True)
+    result = state.next_state(held(YELLOW, WHITE, current_time=1_000))
+    assert result is None
+
+
+def test_yellow_alone_does_not_quit_bomb_mode():
+    state = new_tetris(bomb_mode=True)
+    result = state.next_state(held(YELLOW, current_time=1_000))
+    assert result is state
+
+
+def test_big_red_still_quits_normal_mode():
+    state = new_tetris()
+    sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, True)
+    try:
+        result = state.next_state(held(current_time=1_000))
+    finally:
+        sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, False)
+    assert result is None
 
 
 def test_rules_screen_starts_a_bomb_mode_game():

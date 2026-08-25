@@ -5,8 +5,8 @@ the top.
 
 Two variants share this one implementation, picked by the `bomb_mode` flag
 threaded through from tetris/__init__.py: plain Papa Tetris, and Papa Tetris:
-Bomb, where every 10 lines cleared charges up a bomb that Yellow detonates to
-blast five random rows out of the stack.
+Bomb, where every BOMB_LINES_PER_CHARGE lines cleared charges up a bomb that
+Yellow detonates to blast BOMB_ROWS_REMOVED random rows out of the stack.
 
 A single continuous state that mutates and returns itself every frame, in the
 "continuous game" style described in the README (see color_game) -- the board
@@ -100,8 +100,8 @@ MIN_FALL_INTERVAL_MS = 150
 MOVE_INITIAL_DELAY_MS = 200  # how long a held direction waits before repeating
 MOVE_REPEAT_MS = 80  # repeat interval once auto-shift kicks in
 
-BOMB_LINES_PER_CHARGE = 10  # lines cleared to earn one bomb, bomb mode only
-BOMB_ROWS_REMOVED = 5  # random rows blasted out of the stack per detonation
+BOMB_LINES_PER_CHARGE = 5  # lines cleared to earn one bomb, bomb mode only
+BOMB_ROWS_REMOVED = 3  # random rows blasted out of the stack per detonation
 
 
 def _spawn_position(piece_type: str) -> tuple[int, int]:
@@ -114,12 +114,13 @@ def _piece_cells(piece_type: str, rotation: int, col: int, row: int) -> list[tup
     return [(col + dx, row + dy) for dy, line in enumerate(matrix) for dx, filled in enumerate(line) if filled]
 
 
-def _light_control_leds(bomb_ready: bool) -> None:
-    """Every button but Yellow does something here, so every one but Yellow
-    stays lit as a reminder. Yellow only lights up in bomb mode, and only once
-    a bomb charge is actually ready to detonate."""
+def _light_control_leds() -> None:
+    """Every button but Yellow does something here on its own, so every one but
+    Yellow stays lit as a reminder. Yellow only ever acts in combination with
+    White (the bomb-mode quit combo), so it stays dark like the big red button
+    itself, which has no LED to light."""
     buttons[Color.RED].set_led(True)
-    buttons[Color.YELLOW].set_led(bomb_ready)
+    buttons[Color.YELLOW].set_led(False)
     buttons[Color.GREEN].set_led(True)
     buttons[Color.BLUE].set_led(True)
     buttons[Color.WHITE].set_led(True)
@@ -191,7 +192,7 @@ class TetrisState:
     last_move_dir: int = 0
     green_was_held: bool = False
     white_was_held: bool = False
-    yellow_was_held: bool = False
+    big_red_was_held: bool = False
     bomb_mode: bool = False
     bombs_used: int = 0
 
@@ -285,13 +286,33 @@ class TetrisState:
         _draw_next_box(surface, NEXT_BOX_RECT, self.next_piece)
         if self.bomb_mode:
             _draw_bomb_box(surface, BOMB_BOX_RECT, self.bomb_progress, self.bomb_ready)
+            draw_text(
+                surface,
+                font(16),
+                "Big Red = Bomb  |  Hold Yellow+White = Quit",
+                (PLAY_REGION_WIDTH // 2, 15),
+                (255, 255, 255),
+            )
 
     def _draw_cell(self, surface: pygame.Surface, col: int, row: int, color: tuple[int, int, int]) -> None:
         rect = pygame.Rect(BOARD_LEFT + col * CELL_SIZE, BOARD_TOP + row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         pygame.draw.rect(surface, color, rect.inflate(-2, -2))
 
     def next_state(self, input: Input) -> State | None:
-        if big_red_button_pressed():
+        red_held = buttons[Color.RED].is_pressed()
+        blue_held = buttons[Color.BLUE].is_pressed()
+        green_held = buttons[Color.GREEN].is_pressed()
+        white_held = buttons[Color.WHITE].is_pressed()
+        yellow_held = buttons[Color.YELLOW].is_pressed()
+        big_red_held = big_red_button_pressed()
+
+        # Bomb mode hands Big Red to the bomb, so it can't double as the quit
+        # button here -- Yellow+White together take over that role instead.
+        if self.bomb_mode:
+            if yellow_held and white_held:
+                _clear_control_leds()
+                return None  # back to the menu
+        elif big_red_held:
             _clear_control_leds()
             return None  # back to the menu
 
@@ -299,13 +320,7 @@ class TetrisState:
         if self.next_fall_at is None:
             self.next_fall_at = current_time + self._fall_interval_ms()
 
-        _light_control_leds(self.bomb_ready)
-
-        red_held = buttons[Color.RED].is_pressed()
-        blue_held = buttons[Color.BLUE].is_pressed()
-        green_held = buttons[Color.GREEN].is_pressed()
-        white_held = buttons[Color.WHITE].is_pressed()
-        yellow_held = buttons[Color.YELLOW].is_pressed()
+        _light_control_leds()
 
         desired_dx = 0
         if red_held and not blue_held:
@@ -326,9 +341,10 @@ class TetrisState:
             self._try_rotate()
         self.green_was_held = green_held
 
-        if yellow_held and not self.yellow_was_held and self.bomb_ready:
-            self._detonate_bomb()
-        self.yellow_was_held = yellow_held
+        if self.bomb_mode:
+            if big_red_held and not self.big_red_was_held and self.bomb_ready:
+                self._detonate_bomb()
+            self.big_red_was_held = big_red_held
 
         if white_held and not self.white_was_held:
             if self._hard_drop():
@@ -368,7 +384,8 @@ class RulesScreen:
             ("Pieces fall on their own -- clear full rows to score.", white),
         ]
         if self.bomb_mode:
-            lines.append((f"Every {BOMB_LINES_PER_CHARGE} lines charges a bomb -- Yellow blasts {BOMB_ROWS_REMOVED} random rows.", white))
+            lines.append((f"Every {BOMB_LINES_PER_CHARGE} lines charges a bomb -- Big Red blasts {BOMB_ROWS_REMOVED} random rows.", white))
+            lines.append(("Big Red no longer quits here -- hold Yellow+White together to quit.", white))
         lines.append(("The stack keeps rising -- see how long you can last.", white))
 
         y = 150
