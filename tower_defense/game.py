@@ -100,13 +100,6 @@ def _generate_choices(correct: int) -> list[int]:
     return choices
 
 
-def _light_control_leds() -> None:
-    """Every button has a job here -- Red/Green aim the tower, Blue/Yellow/White
-    answer the aimed lane's problem -- so all five stay lit."""
-    for button in buttons.values():
-        button.set_led(True)
-
-
 def _light_result_leds() -> None:
     """Green: Play Again, Red: Main Menu -- the only two live buttons here."""
     buttons[Color.RED].set_led(True)
@@ -164,6 +157,9 @@ class Enemy:
     text: str
     correct_answer: int
     choices: list[int]  # answers for Blue, Yellow, White, in that order
+    # Only one guess per lap -- once used, further presses do nothing until this
+    # enemy reaches the tower and comes back around for another try.
+    guess_used: bool = False
 
 
 @dataclass
@@ -185,9 +181,24 @@ class TowerDefenseState:
 
     def _try_answer(self, choice_index: int) -> None:
         enemy = self.lanes[self.current_lane]
-        if enemy is not None and enemy.choices[choice_index] == enemy.correct_answer:
+        if enemy is None or enemy.guess_used:
+            return
+        enemy.guess_used = True
+        if enemy.choices[choice_index] == enemy.correct_answer:
             self.lanes[self.current_lane] = None
             self.score += 1
+
+    def _light_control_leds(self) -> None:
+        """Red/Green always aim the tower. Blue/Yellow/White answer the aimed
+        lane's problem, but only while that enemy still has a guess left --
+        once it's used them, those three go dark until the aim moves or the
+        enemy comes back around."""
+        buttons[Color.RED].set_led(True)
+        buttons[Color.GREEN].set_led(True)
+        enemy = self.lanes[self.current_lane]
+        can_guess = enemy is not None and not enemy.guess_used
+        for color in ANSWER_BUTTONS:
+            buttons[color].set_led(can_guess)
 
     def _spawn_enemy(self) -> None:
         empty_lanes = [i for i, enemy in enumerate(self.lanes) if enemy is None]
@@ -236,11 +247,14 @@ class TowerDefenseState:
         pygame.draw.rect(surface, (20, 20, 40), (0, bar_top, CANVAS_WIDTH, ANSWER_BAR_HEIGHT))
 
         enemy = self.lanes[self.current_lane]
+        locked = enemy is not None and enemy.guess_used
         slot_width = CANVAS_WIDTH // 3
         for i, color in enumerate(ANSWER_BUTTONS):
             text = str(enemy.choices[i]) if enemy is not None else "-"
             slot_rect = pygame.Rect(slot_width * i + 15, bar_top + 12, slot_width - 30, ANSWER_BAR_HEIGHT - 24)
             button_color = buttons[color].rgb.to_tuple()
+            if locked:
+                button_color = tuple(c // 3 for c in button_color)
             pygame.draw.rect(surface, button_color, slot_rect, border_radius=10)
             draw_text(surface, font(40), text, slot_rect.center, _readable_text_color(button_color))
 
@@ -257,7 +271,7 @@ class TowerDefenseState:
         dt = max(0, current_time - self.last_update_time) / 1000.0
         self.last_update_time = current_time
 
-        _light_control_leds()
+        self._light_control_leds()
 
         red_held = buttons[Color.RED].is_pressed()
         green_held = buttons[Color.GREEN].is_pressed()
@@ -289,7 +303,8 @@ class TowerDefenseState:
                     return TowerDefenseResultScreen(score=self.score)
                 # Send it back around with the same problem instead of a fresh
                 # one, so a problem that got through has to be answered eventually.
-                self.lanes[lane] = replace(enemy, x=ENEMY_START_X)
+                # A new lap means a new guess.
+                self.lanes[lane] = replace(enemy, x=ENEMY_START_X, guess_used=False)
 
         if current_time >= self.next_spawn_at:
             self._spawn_enemy()

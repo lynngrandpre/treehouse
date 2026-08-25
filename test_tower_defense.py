@@ -142,6 +142,32 @@ def test_wrong_answer_does_nothing():
     assert state.score == 0
 
 
+def test_only_one_guess_per_lap_a_wrong_guess_locks_out_further_presses():
+    state = new_tower_defense()
+    state.next_state(held(current_time=1_000))
+    lane = state.current_lane
+    state.lanes[lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
+
+    state.next_state(held(YELLOW, current_time=1_050))  # wrong guess, uses it up
+    assert state.lanes[lane] is not None
+    assert state.lanes[lane].guess_used is True
+
+    state.next_state(release())
+    state.next_state(held(BLUE, current_time=1_100))  # the actually-correct answer, too late
+    assert state.lanes[lane] is not None
+    assert state.score == 0
+
+
+def test_a_repeated_problem_after_breaching_gets_a_fresh_guess():
+    state = new_tower_defense()
+    state.next_state(held(current_time=1_000))
+    lane = 0
+    state.lanes[lane] = Enemy(x=TOWER_X + 1, text="1 + 1", correct_answer=2, choices=[2, 1, 3], guess_used=True)
+
+    state.next_state(held(current_time=1_500))
+    assert state.lanes[lane].guess_used is False
+
+
 def test_answering_an_empty_lane_does_nothing():
     state = new_tower_defense()
     state.next_state(held(current_time=1_000))
@@ -165,6 +191,20 @@ def test_an_enemy_reaching_the_tower_costs_a_life_and_repeats_its_problem():
     assert state.lanes[lane].correct_answer == 2
     assert state.lanes[lane].x == ENEMY_START_X
     assert state.lives == STARTING_LIVES - 1
+
+
+def test_answer_leds_go_dark_once_the_aimed_enemys_guess_is_used():
+    state = new_tower_defense()
+    state.next_state(held(current_time=1_000))
+    state.lanes[state.current_lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
+
+    state.next_state(held(YELLOW, current_time=1_050))  # wrong guess, uses it up
+    state.next_state(release())
+
+    for color in (Color.BLUE, Color.YELLOW, Color.WHITE):
+        assert sim_gpio.get_output_state(buttons[color].led_pin) is False
+    for color in (Color.RED, Color.GREEN):
+        assert sim_gpio.get_output_state(buttons[color].led_pin) is True
 
 
 def test_losing_the_last_life_ends_the_game():
