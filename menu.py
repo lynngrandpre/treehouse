@@ -12,6 +12,7 @@ from dataclasses import dataclass, replace
 
 import pygame
 
+import ball_machine
 import breakout
 import chain
 import color_game
@@ -40,7 +41,14 @@ categories = [
     Category("Quiz Games", color_game.games + quiz.games + mastermind.games + chain.games + flags.games),
     Category(
         "Arcade Games",
-        pacman.games + vault.games + breakout.games + space_invaders.games + tetris.games + tower_defense.games + simon.games,
+        pacman.games
+        + vault.games
+        + breakout.games
+        + space_invaders.games
+        + tetris.games
+        + tower_defense.games
+        + simon.games
+        + ball_machine.games,
     ),
 ]
 
