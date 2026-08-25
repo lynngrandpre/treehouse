@@ -3,8 +3,9 @@
 Yellow, or White. The correct answer fires and destroys the enemy; a wrong
 guess does nothing. Let an enemy reach the tower and it costs a life -- and
 sends that same enemy back around with the same problem, so it has to be
-answered eventually. Lose all your lives and the game's over. Enemies get
-faster the more you solve, so see how long the two of you can hold out.
+answered eventually. Lose all your lives and the game's over. Every 25
+points levels the game up, alternating between faster enemies and bigger
+sums, with a short breather in between so you know it's getting harder.
 
 A single continuous state that mutates and returns itself every frame, in the
 "continuous game" style described in the README (see color_game) -- the
@@ -58,34 +59,64 @@ STARTING_LIVES = 3
 # Enemy's `choices` list -- choices[0] is the Blue answer, and so on.
 ANSWER_BUTTONS = [Color.BLUE, Color.YELLOW, Color.WHITE]
 
-# Every SPEEDUP_EVERY correct answers, enemies move a little faster and spawn
-# a little more often -- the same "ramp up over time" idea as Tetris's
-# FALL_SPEEDUP_PER_LINES.
-SPEEDUP_EVERY = 5
+# Every LEVEL_UP_EVERY points, the game levels up and a LevelUpScreen breather
+# announces it. Levels alternate what gets harder: odd levels speed the
+# enemies up, even levels raise the sum problems can add up to -- first speed,
+# per the ask, and sums top out at the last entry in SUM_CAPS.
+LEVEL_UP_EVERY = 25
+SUM_CAPS = [10, 15, 20]
+LEVEL_BREAK_MS = 3000
+
 BASE_ENEMY_SPEED = 40  # pixels per second
-ENEMY_SPEEDUP_STEP = 6
-MAX_ENEMY_SPEED = 130
+ENEMY_SPEEDUP_STEP = 16
+MAX_ENEMY_SPEED = 136
 BASE_SPAWN_INTERVAL_MS = 3200
-SPAWN_SPEEDUP_STEP_MS = 120
+SPAWN_SPEEDUP_STEP_MS = 280
 MIN_SPAWN_INTERVAL_MS = 1400
 
 
-def _difficulty_tier(score: int) -> int:
-    return score // SPEEDUP_EVERY
+def _level(score: int) -> int:
+    return score // LEVEL_UP_EVERY
+
+
+def _speed_tier(level: int) -> int:
+    return (level + 1) // 2
+
+
+def _sum_tier(level: int) -> int:
+    return min(level // 2, len(SUM_CAPS) - 1)
 
 
 def _enemy_speed(score: int) -> float:
-    return min(MAX_ENEMY_SPEED, BASE_ENEMY_SPEED + _difficulty_tier(score) * ENEMY_SPEEDUP_STEP)
+    return min(MAX_ENEMY_SPEED, BASE_ENEMY_SPEED + _speed_tier(_level(score)) * ENEMY_SPEEDUP_STEP)
 
 
 def _spawn_interval_ms(score: int) -> int:
-    return max(MIN_SPAWN_INTERVAL_MS, BASE_SPAWN_INTERVAL_MS - _difficulty_tier(score) * SPAWN_SPEEDUP_STEP_MS)
+    return max(MIN_SPAWN_INTERVAL_MS, BASE_SPAWN_INTERVAL_MS - _speed_tier(_level(score)) * SPAWN_SPEEDUP_STEP_MS)
 
 
-def _generate_problem() -> tuple[str, int]:
-    """Addition only, always summing to 10 or less."""
-    a = random.randint(1, 9)
-    b = random.randint(1, 10 - a)
+def _sum_cap(score: int) -> int:
+    return SUM_CAPS[_sum_tier(_level(score))]
+
+
+def _level_up_message(level: int) -> str:
+    """What actually changed going into this level -- speed and sum caps both
+    top out eventually, so a milestone can be reached without either moving;
+    fall back to something generic rather than claim a change that didn't happen."""
+    prior_score = (level - 1) * LEVEL_UP_EVERY
+    this_score = level * LEVEL_UP_EVERY
+    if _enemy_speed(this_score) != _enemy_speed(prior_score):
+        return "The aliens are moving faster now!"
+    if _sum_cap(this_score) != _sum_cap(prior_score):
+        return f"Problems can now add up to {_sum_cap(this_score)}!"
+    return "Keep up the great work!"
+
+
+def _generate_problem(score: int) -> tuple[str, int]:
+    """Addition only. The sum cap rises as the level climbs (see SUM_CAPS)."""
+    cap = _sum_cap(score)
+    a = random.randint(1, cap - 1)
+    b = random.randint(1, cap - a)
     return f"{a} + {b}", a + b
 
 
@@ -173,6 +204,7 @@ class TowerDefenseState:
     next_spawn_at: int | None = None
     last_update_time: int | None = None
     breach_flash_until: int = 0
+    announced_level: int = 0
     red_was_held: bool = False
     green_was_held: bool = False
     blue_was_held: bool = False
@@ -205,7 +237,7 @@ class TowerDefenseState:
         if not empty_lanes:
             return
         lane = random.choice(empty_lanes)
-        text, answer = _generate_problem()
+        text, answer = _generate_problem(self.score)
         self.lanes[lane] = Enemy(x=ENEMY_START_X, text=text, correct_answer=answer, choices=_generate_choices(answer))
 
     def draw(self, surface: pygame.Surface) -> None:
@@ -289,6 +321,12 @@ class TowerDefenseState:
                 self._try_answer(i)
             setattr(self, attr, held)
 
+        new_level = _level(self.score)
+        if new_level > self.announced_level:
+            self.announced_level = new_level
+            _clear_control_leds()
+            return LevelUpScreen(resume_state=self, level=new_level, message=_level_up_message(new_level))
+
         speed = _enemy_speed(self.score)
         for lane, enemy in enumerate(self.lanes):
             if enemy is None:
@@ -314,6 +352,43 @@ class TowerDefenseState:
 
 
 @dataclass
+class LevelUpScreen:
+    """A short breather shown whenever a score milestone raises the difficulty.
+    Holds for LEVEL_BREAK_MS -- the wrapped TowerDefenseState just sits there,
+    since this screen never calls its next_state -- then hands control straight
+    back to it."""
+
+    resume_state: TowerDefenseState
+    level: int
+    message: str
+    shown_until: int | None = None
+
+    def draw(self, surface: pygame.Surface) -> None:
+        surface.fill((10, 10, 30))
+        white = (255, 255, 255)
+        draw_text(surface, font(50), f"Level {self.level + 1}!", (CANVAS_WIDTH // 2, 160), white)
+        draw_text(surface, font(28), "Take a quick breather...", (CANVAS_WIDTH // 2, 230), white)
+        draw_text(surface, font(28), self.message, (CANVAS_WIDTH // 2, 280), (255, 210, 90))
+
+    def next_state(self, input: Input) -> State | None:
+        if big_red_button_pressed():
+            _clear_control_leds()
+            return None  # back to the menu
+
+        current_time = input.current_time
+        if self.shown_until is None:
+            self.shown_until = current_time + LEVEL_BREAK_MS
+            return self
+
+        if current_time < self.shown_until:
+            return self
+
+        # Resume with a clean clock so the paused time isn't counted as dt.
+        self.resume_state.last_update_time = None
+        return self.resume_state
+
+
+@dataclass
 class RulesScreen:
     """Shown once, before the enemies start marching, so both players know
     their half of the controls. "Play Again" from the result screen skips
@@ -332,6 +407,7 @@ class RulesScreen:
             ("Answer correctly to fire and destroy that enemy.", white),
             ("Let one reach the tower and you lose a life.", white),
             (f"Lose all {STARTING_LIVES} lives and it's game over.", white),
+            (f"Every {LEVEL_UP_EVERY} points it levels up and gets harder.", white),
         ]
         y = 130
         for text, color in lines:

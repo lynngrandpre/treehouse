@@ -8,9 +8,13 @@ from hardware import BIG_RED_BUTTON_PIN, Color, buttons, buttons_in_order
 from tower_defense.game import (
     ENEMY_START_X,
     LANES,
+    LEVEL_BREAK_MS,
+    LEVEL_UP_EVERY,
     STARTING_LIVES,
+    SUM_CAPS,
     TOWER_X,
     Enemy,
+    LevelUpScreen,
     RulesScreen,
     TowerDefenseResultScreen,
     TowerDefenseState,
@@ -166,6 +170,61 @@ def test_a_repeated_problem_after_breaching_gets_a_fresh_guess():
 
     state.next_state(held(current_time=1_500))
     assert state.lanes[lane].guess_used is False
+
+
+def test_scoring_past_a_level_threshold_shows_a_getting_harder_break():
+    state = new_tower_defense()
+    state.next_state(held(current_time=1_000))
+    state.score = LEVEL_UP_EVERY - 1
+    state.lanes[state.current_lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
+
+    result = state.next_state(held(BLUE, current_time=1_050))
+    assert isinstance(result, LevelUpScreen)
+    assert result.resume_state is state
+    assert result.level == 1
+    assert state.score == LEVEL_UP_EVERY
+    assert state.announced_level == 1
+
+
+def test_level_up_screen_holds_then_hands_back_to_the_paused_game():
+    resume_state = new_tower_defense()
+    screen = LevelUpScreen(resume_state=resume_state, level=1, message="faster!")
+
+    screen = screen.next_state(held(current_time=2_000))  # anchors the hold timer
+    assert screen.resume_state is resume_state
+
+    still_paused = screen.next_state(held(current_time=2_000 + LEVEL_BREAK_MS - 1))
+    assert still_paused is screen
+
+    resumed = screen.next_state(held(current_time=2_000 + LEVEL_BREAK_MS))
+    assert resumed is resume_state
+    assert resume_state.last_update_time is None
+
+
+def test_level_up_screen_big_red_button_returns_to_menu():
+    screen = LevelUpScreen(resume_state=new_tower_defense(), level=1, message="faster!")
+    sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, True)
+    try:
+        result = screen.next_state(release())
+    finally:
+        sim_gpio.set_input_state(BIG_RED_BUTTON_PIN, False)
+    assert result is None
+
+
+def test_difficulty_alternates_speed_first_then_sum_cap_as_levels_climb():
+    from tower_defense.game import _enemy_speed, _sum_cap
+
+    base_speed = _enemy_speed(0)
+    base_cap = _sum_cap(0)
+    assert base_cap == SUM_CAPS[0]
+
+    level_1_score = LEVEL_UP_EVERY  # first milestone: speed goes up, sum cap doesn't
+    assert _enemy_speed(level_1_score) > base_speed
+    assert _sum_cap(level_1_score) == base_cap
+
+    level_2_score = LEVEL_UP_EVERY * 2  # second milestone: sum cap goes up, speed holds
+    assert _enemy_speed(level_2_score) == _enemy_speed(level_1_score)
+    assert _sum_cap(level_2_score) == SUM_CAPS[1]
 
 
 def test_answering_an_empty_lane_does_nothing():
