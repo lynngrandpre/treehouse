@@ -8,6 +8,8 @@ from hardware import BIG_RED_BUTTON_PIN, Color, buttons, buttons_in_order
 from tetris.game import (
     BOARD_COLS,
     BOARD_ROWS,
+    BOMB_LINES_PER_CHARGE,
+    BOMB_ROWS_REMOVED,
     LINE_SCORES,
     MOVE_INITIAL_DELAY_MS,
     MOVE_REPEAT_MS,
@@ -242,3 +244,55 @@ def test_result_screen_green_starts_a_new_game():
 def test_result_screen_ignores_other_buttons():
     state = TetrisResultScreen(score=500, lines_cleared=4, ready=True)
     assert isinstance(state.next_state(press(YELLOW)), TetrisResultScreen)
+
+
+def test_normal_mode_bomb_is_never_ready():
+    state = new_tetris()
+    state.lines_cleared = BOMB_LINES_PER_CHARGE
+    assert state.bomb_ready is False
+
+
+def test_bomb_mode_bomb_becomes_ready_after_enough_lines():
+    state = new_tetris(bomb_mode=True)
+    assert state.bomb_ready is False
+    state.lines_cleared = BOMB_LINES_PER_CHARGE
+    assert state.bomb_ready is True
+
+
+def test_yellow_detonates_a_ready_bomb_removing_five_rows():
+    state = new_tetris(bomb_mode=True)
+    state.lines_cleared = BOMB_LINES_PER_CHARGE
+    for row in range(BOARD_ROWS):
+        state.board[row][0] = "Z"
+
+    result = state.next_state(held(YELLOW, current_time=1_000))
+    assert result is state
+    assert state.bombs_used == 1
+    assert state.bomb_ready is False
+    filled_rows = sum(1 for row in state.board if row[0] == "Z")
+    assert filled_rows == BOARD_ROWS - BOMB_ROWS_REMOVED
+    assert state.board[0] == [None] * BOARD_COLS
+
+
+def test_yellow_does_nothing_without_a_ready_bomb():
+    state = new_tetris(bomb_mode=True)
+    for row in range(BOARD_ROWS):
+        state.board[row][0] = "Z"
+
+    state.next_state(held(YELLOW, current_time=1_000))
+    assert state.bombs_used == 0
+    assert all(row[0] == "Z" for row in state.board)
+
+
+def test_rules_screen_starts_a_bomb_mode_game():
+    state = RulesScreen(bomb_mode=True)
+    result = state.next_state(press(BLUE))
+    assert isinstance(result, TetrisState)
+    assert result.bomb_mode is True
+
+
+def test_result_screen_play_again_preserves_bomb_mode():
+    state = TetrisResultScreen(score=500, lines_cleared=4, bomb_mode=True, ready=True)
+    new_state = state.next_state(press(GREEN))
+    assert isinstance(new_state, TetrisState)
+    assert new_state.bomb_mode is True

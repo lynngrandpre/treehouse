@@ -1,7 +1,12 @@
-"""Tetris: Red/Blue slide the falling piece left and right, Green rotates it,
-White hard-drops it straight to the floor. Pieces fall on their own; clear
+"""Papa Tetris: Red/Blue slide the falling piece left and right, Green rotates
+it, White hard-drops it straight to the floor. Pieces fall on their own; clear
 full rows to score, and see how long you can last before the stack reaches
 the top.
+
+Two variants share this one implementation, picked by the `bomb_mode` flag
+threaded through from tetris/__init__.py: plain Papa Tetris, and Papa Tetris:
+Bomb, where every 10 lines cleared charges up a bomb that Yellow detonates to
+blast five random rows out of the stack.
 
 A single continuous state that mutates and returns itself every frame, in the
 "continuous game" style described in the README (see color_game) -- the board
@@ -46,6 +51,9 @@ BOX_LEFT = SIDE_PANEL_LEFT + (SIDE_PANEL_WIDTH - BOX_WIDTH) // 2
 SCORE_BOX_RECT = pygame.Rect(BOX_LEFT, HUD_HEIGHT + 10, BOX_WIDTH, 90)
 LINES_BOX_RECT = pygame.Rect(BOX_LEFT, SCORE_BOX_RECT.bottom + 15, BOX_WIDTH, 70)
 NEXT_BOX_RECT = pygame.Rect(BOX_LEFT, LINES_BOX_RECT.bottom + 15, BOX_WIDTH, 140)
+# Only shown in bomb mode, below the next-piece box -- there's just enough
+# room left in the side panel for one more short box.
+BOMB_BOX_RECT = pygame.Rect(BOX_LEFT, NEXT_BOX_RECT.bottom + 15, BOX_WIDTH, 70)
 
 PIECE_SHAPES = {
     "I": [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]],
@@ -92,6 +100,9 @@ MIN_FALL_INTERVAL_MS = 150
 MOVE_INITIAL_DELAY_MS = 200  # how long a held direction waits before repeating
 MOVE_REPEAT_MS = 80  # repeat interval once auto-shift kicks in
 
+BOMB_LINES_PER_CHARGE = 10  # lines cleared to earn one bomb, bomb mode only
+BOMB_ROWS_REMOVED = 5  # random rows blasted out of the stack per detonation
+
 
 def _spawn_position(piece_type: str) -> tuple[int, int]:
     size = len(PIECE_SHAPES[piece_type])
@@ -103,11 +114,12 @@ def _piece_cells(piece_type: str, rotation: int, col: int, row: int) -> list[tup
     return [(col + dx, row + dy) for dy, line in enumerate(matrix) for dx, filled in enumerate(line) if filled]
 
 
-def _light_control_leds() -> None:
+def _light_control_leds(bomb_ready: bool) -> None:
     """Every button but Yellow does something here, so every one but Yellow
-    stays lit as a reminder."""
+    stays lit as a reminder. Yellow only lights up in bomb mode, and only once
+    a bomb charge is actually ready to detonate."""
     buttons[Color.RED].set_led(True)
-    buttons[Color.YELLOW].set_led(False)
+    buttons[Color.YELLOW].set_led(bomb_ready)
     buttons[Color.GREEN].set_led(True)
     buttons[Color.BLUE].set_led(True)
     buttons[Color.WHITE].set_led(True)
@@ -151,6 +163,17 @@ def _draw_next_box(surface: pygame.Surface, rect: pygame.Rect, piece_type: str) 
                 pygame.draw.rect(surface, PIECE_COLORS[piece_type], cell_rect.inflate(-2, -2))
 
 
+def _draw_bomb_box(surface: pygame.Surface, rect: pygame.Rect, progress: int, ready: bool) -> None:
+    white = (255, 255, 255)
+    yellow = (255, 235, 0)
+    pygame.draw.rect(surface, WALL_COLOR, rect, width=2)
+    draw_text(surface, font(18), "BOMB", (rect.centerx, rect.top + 22), white)
+    if ready:
+        draw_text(surface, font(24), "READY!", (rect.centerx, rect.top + 50), yellow)
+    else:
+        draw_text(surface, font(24), f"{progress}/{BOMB_LINES_PER_CHARGE}", (rect.centerx, rect.top + 50), white)
+
+
 @dataclass
 class TetrisState:
     board: list[list[str | None]]
@@ -168,6 +191,23 @@ class TetrisState:
     last_move_dir: int = 0
     green_was_held: bool = False
     white_was_held: bool = False
+    yellow_was_held: bool = False
+    bomb_mode: bool = False
+    bombs_used: int = 0
+
+    @property
+    def bomb_ready(self) -> bool:
+        return self.bomb_mode and self.lines_cleared // BOMB_LINES_PER_CHARGE > self.bombs_used
+
+    @property
+    def bomb_progress(self) -> int:
+        return self.lines_cleared - self.bombs_used * BOMB_LINES_PER_CHARGE
+
+    def _detonate_bomb(self) -> None:
+        self.bombs_used += 1
+        blasted = set(random.sample(range(BOARD_ROWS), BOMB_ROWS_REMOVED))
+        remaining_rows = [row for i, row in enumerate(self.board) if i not in blasted]
+        self.board = [[None] * BOARD_COLS for _ in range(BOMB_ROWS_REMOVED)] + remaining_rows
 
     def _fits(self, cells: list[tuple[int, int]]) -> bool:
         for col, row in cells:
@@ -243,6 +283,8 @@ class TetrisState:
         _draw_label_box(surface, SCORE_BOX_RECT, "SCORE", str(self.score))
         _draw_label_box(surface, LINES_BOX_RECT, "LINES", str(self.lines_cleared))
         _draw_next_box(surface, NEXT_BOX_RECT, self.next_piece)
+        if self.bomb_mode:
+            _draw_bomb_box(surface, BOMB_BOX_RECT, self.bomb_progress, self.bomb_ready)
 
     def _draw_cell(self, surface: pygame.Surface, col: int, row: int, color: tuple[int, int, int]) -> None:
         rect = pygame.Rect(BOARD_LEFT + col * CELL_SIZE, BOARD_TOP + row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
@@ -257,12 +299,13 @@ class TetrisState:
         if self.next_fall_at is None:
             self.next_fall_at = current_time + self._fall_interval_ms()
 
-        _light_control_leds()
+        _light_control_leds(self.bomb_ready)
 
         red_held = buttons[Color.RED].is_pressed()
         blue_held = buttons[Color.BLUE].is_pressed()
         green_held = buttons[Color.GREEN].is_pressed()
         white_held = buttons[Color.WHITE].is_pressed()
+        yellow_held = buttons[Color.YELLOW].is_pressed()
 
         desired_dx = 0
         if red_held and not blue_held:
@@ -283,17 +326,21 @@ class TetrisState:
             self._try_rotate()
         self.green_was_held = green_held
 
+        if yellow_held and not self.yellow_was_held and self.bomb_ready:
+            self._detonate_bomb()
+        self.yellow_was_held = yellow_held
+
         if white_held and not self.white_was_held:
             if self._hard_drop():
                 _clear_control_leds()
-                return TetrisResultScreen(score=self.score, lines_cleared=self.lines_cleared)
+                return TetrisResultScreen(score=self.score, lines_cleared=self.lines_cleared, bomb_mode=self.bomb_mode)
         self.white_was_held = white_held
 
         if current_time >= self.next_fall_at:
             if not self._try_move(0, 1):
                 if self._lock_piece():
                     _clear_control_leds()
-                    return TetrisResultScreen(score=self.score, lines_cleared=self.lines_cleared)
+                    return TetrisResultScreen(score=self.score, lines_cleared=self.lines_cleared, bomb_mode=self.bomb_mode)
             self.next_fall_at = current_time + self._fall_interval_ms()
 
         return self
@@ -306,19 +353,24 @@ class RulesScreen:
     screen skips straight back into a fresh game rather than re-showing this.
     """
 
+    bomb_mode: bool = False
     ready: bool = True
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill((10, 10, 25))
         white = (255, 255, 255)
-        draw_text(surface, font(48), "Tetris", (CANVAS_WIDTH // 2, 50), white)
+        title = "Papa Tetris: Bomb" if self.bomb_mode else "Papa Tetris"
+        draw_text(surface, font(48), title, (CANVAS_WIDTH // 2, 50), white)
 
         lines = [
             ("Red = left, Blue = right", white),
             ("Green = rotate, White = drop", white),
             ("Pieces fall on their own -- clear full rows to score.", white),
-            ("The stack keeps rising -- see how long you can last.", white),
         ]
+        if self.bomb_mode:
+            lines.append((f"Every {BOMB_LINES_PER_CHARGE} lines charges a bomb -- Yellow blasts {BOMB_ROWS_REMOVED} random rows.", white))
+        lines.append(("The stack keeps rising -- see how long you can last.", white))
+
         y = 150
         for text, color in lines:
             draw_text(surface, font(30), text, (CANVAS_WIDTH // 2, y), color)
@@ -336,13 +388,14 @@ class RulesScreen:
         if not self.ready:
             return self
 
-        return new_tetris()
+        return new_tetris(bomb_mode=self.bomb_mode)
 
 
 @dataclass
 class TetrisResultScreen:
     score: int
     lines_cleared: int
+    bomb_mode: bool = False
     # Starts unarmed: the press that got us here may still have a button
     # held on the very first frame we're drawn. Require a release first,
     # same as the other games' result screens.
@@ -371,14 +424,14 @@ class TetrisResultScreen:
             return self
 
         if buttons[Color.GREEN].is_pressed():
-            return new_tetris()
+            return new_tetris(bomb_mode=self.bomb_mode)
         if buttons[Color.RED].is_pressed():
             return None  # back to the menu
 
         return self
 
 
-def new_tetris() -> TetrisState:
+def new_tetris(bomb_mode: bool = False) -> TetrisState:
     piece_type = random.choice(PIECE_TYPES)
     next_piece = random.choice(PIECE_TYPES)
     piece_col, piece_row = _spawn_position(piece_type)
@@ -389,8 +442,9 @@ def new_tetris() -> TetrisState:
         piece_col=piece_col,
         piece_row=piece_row,
         next_piece=next_piece,
+        bomb_mode=bomb_mode,
     )
 
 
-def new_tetris_with_rules() -> RulesScreen:
-    return RulesScreen()
+def new_tetris_with_rules(bomb_mode: bool = False) -> RulesScreen:
+    return RulesScreen(bomb_mode=bomb_mode)
