@@ -18,8 +18,9 @@ serve delay and turbo latch.
 
 from __future__ import annotations
 
+import math
 import random
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 
 import pygame
 
@@ -103,6 +104,11 @@ MOVE_REPEAT_MS = 80  # repeat interval once auto-shift kicks in
 BOMB_LINES_PER_CHARGE = 5  # lines cleared to earn one bomb, bomb mode only
 BOMB_ROWS_REMOVED = 3  # random rows blasted out of the stack per detonation
 
+EXPLOSION_DURATION_MS = 700  # how long the detonation animation plays over the board
+EXPLOSION_FLASH_MS = 180  # the initial bright flash fades out over this slice of it
+EXPLOSION_PARTICLE_COUNT = 40
+EXPLOSION_COLORS = [(255, 90, 20), (255, 170, 40), (255, 230, 90), (255, 60, 40)]
+
 
 def _spawn_position(piece_type: str) -> tuple[int, int]:
     size = len(PIECE_SHAPES[piece_type])
@@ -175,6 +181,41 @@ def _draw_bomb_box(surface: pygame.Surface, rect: pygame.Rect, progress: int, re
         draw_text(surface, font(24), f"{progress}/{BOMB_LINES_PER_CHARGE}", (rect.centerx, rect.top + 50), white)
 
 
+def _draw_explosion(surface: pygame.Surface, elapsed: int) -> None:
+    """A big, blocky burst centered on the board: a bright flash that fades fast,
+    expanding shockwave rings, and chunky debris flying outward -- deterministic
+    per-particle spread (no per-frame RNG needed) so it plays the same smooth
+    animation every time it's called."""
+    progress = min(1.0, elapsed / EXPLOSION_DURATION_MS)
+    board_rect = pygame.Rect(BOARD_LEFT, BOARD_TOP, BOARD_WIDTH, BOARD_HEIGHT)
+    center = board_rect.center
+
+    flash_progress = min(1.0, elapsed / EXPLOSION_FLASH_MS)
+    if flash_progress < 1.0:
+        flash_alpha = int(200 * (1.0 - flash_progress))
+        flash_surface = pygame.Surface(board_rect.size, pygame.SRCALPHA)
+        flash_surface.fill((255, 230, 120, flash_alpha))
+        surface.blit(flash_surface, board_rect.topleft)
+
+    max_radius = max(BOARD_WIDTH, BOARD_HEIGHT)
+    for ring in range(3):
+        ring_progress = min(1.0, max(0.0, progress - ring * 0.12))
+        if 0.0 < ring_progress < 1.0:
+            radius = int(ring_progress * max_radius)
+            width = max(1, int(8 * (1.0 - ring_progress)))
+            pygame.draw.circle(surface, EXPLOSION_COLORS[ring % len(EXPLOSION_COLORS)], center, radius, width=width)
+
+    for i in range(EXPLOSION_PARTICLE_COUNT):
+        angle = (2 * math.pi * i) / EXPLOSION_PARTICLE_COUNT
+        speed = 90 + (i * 37) % 140  # deterministic per-particle spread
+        distance = progress * speed
+        x = center[0] + math.cos(angle) * distance
+        y = center[1] + math.sin(angle) * distance
+        size = max(1, int(12 * (1.0 - progress)))
+        color = EXPLOSION_COLORS[i % len(EXPLOSION_COLORS)]
+        pygame.draw.rect(surface, color, pygame.Rect(int(x) - size // 2, int(y) - size // 2, size, size))
+
+
 @dataclass
 class TetrisState:
     board: list[list[str | None]]
@@ -195,6 +236,7 @@ class TetrisState:
     big_red_was_held: bool = False
     bomb_mode: bool = False
     bombs_used: int = 0
+    explosion_started_at: int | None = None
 
     @property
     def bomb_ready(self) -> bool:
@@ -204,8 +246,9 @@ class TetrisState:
     def bomb_progress(self) -> int:
         return self.lines_cleared - self.bombs_used * BOMB_LINES_PER_CHARGE
 
-    def _detonate_bomb(self) -> None:
+    def _detonate_bomb(self, current_time: int) -> None:
         self.bombs_used += 1
+        self.explosion_started_at = current_time
         blasted = set(random.sample(range(BOARD_ROWS), BOMB_ROWS_REMOVED))
         remaining_rows = [row for i, row in enumerate(self.board) if i not in blasted]
         self.board = [[None] * BOARD_COLS for _ in range(BOMB_ROWS_REMOVED)] + remaining_rows
@@ -294,6 +337,11 @@ class TetrisState:
                 (255, 255, 255),
             )
 
+        if self.explosion_started_at is not None:
+            elapsed = pygame.time.get_ticks() - self.explosion_started_at
+            if elapsed < EXPLOSION_DURATION_MS:
+                _draw_explosion(surface, elapsed)
+
     def _draw_cell(self, surface: pygame.Surface, col: int, row: int, color: tuple[int, int, int]) -> None:
         rect = pygame.Rect(BOARD_LEFT + col * CELL_SIZE, BOARD_TOP + row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
         pygame.draw.rect(surface, color, rect.inflate(-2, -2))
@@ -343,7 +391,7 @@ class TetrisState:
 
         if self.bomb_mode:
             if big_red_held and not self.big_red_was_held and self.bomb_ready:
-                self._detonate_bomb()
+                self._detonate_bomb(current_time)
             self.big_red_was_held = big_red_held
 
         if white_held and not self.white_was_held:
