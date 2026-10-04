@@ -30,13 +30,20 @@ def font(size: int, bold: bool = False) -> pygame.font.Font:
     return pygame.font.SysFont("Arial", size, bold=bold)
 
 
+@lru_cache(maxsize=384)
+def label(value: str, size: int, color: tuple[int, int, int], bold: bool) -> pygame.Surface:
+    # HUD strings repeat across frames. Avoid re-rasterizing dozens of labels
+    # every frame on the Pi; the bounded cache also covers cooldown numbers.
+    return font(size, bold).render(value, True, color)
+
+
 def text(surface: pygame.Surface, value: str, x: float, y: float, size: int = 18,
          color: tuple[int, int, int] = TEXT, bold: bool = False, limit: int = 0) -> None:
     face = font(size, bold)
     if limit:
         while face.size(value)[0] > limit and len(value) > 3:
             value = value[:-4] + "..."
-    surface.blit(face.render(value, True, color), (int(x), int(y)))
+    surface.blit(label(value, size, color, bold), (int(x), int(y)))
 
 
 def card(surface: pygame.Surface, rect: tuple[int, int, int, int],
