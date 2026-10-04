@@ -6,3 +6,4 @@ __pycache__/
 .deploy-key
 .deploy-key.pub
 math_blaster/data/progress.json
+starship/data/

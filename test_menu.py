@@ -7,6 +7,8 @@ conftest.py sets SIMULATOR=1, so hardware.buttons_in_order are wired to sim_gpio
 and set_input_state below is the same hook the driver's mouse/keyboard handling
 uses to press them."""
 
+from typing import Any
+
 import menu
 import sim_gpio
 from common import GetReadyScreen, Input
@@ -15,7 +17,7 @@ from menu import CategoryMenuState, GameMenuState
 from quiz.game import AskingQuestionState
 
 
-def led_states(state) -> list[bool]:
+def led_states(state: Any) -> list[bool]:
     state.next_state(release())
     return [sim_gpio.get_output_state(button.led_pin) for button in buttons_in_order]
 
@@ -31,11 +33,11 @@ def release() -> Input:
     return press()  # no indices held
 
 
-def options(state) -> list[str]:
+def options(state: Any) -> list[str]:
     return state._options_picker().options
 
 
-def click(state, index: int):
+def click(state: Any, index: int):
     """One full press-then-release of a single paging button, as a real tap would
     land across two frames. Asserts we stay in the given state's type and returns it."""
     state_type = type(state)
@@ -63,13 +65,13 @@ def arcade_games_menu() -> GameMenuState:
 
 
 # These tests assume two categories: fourteen Quiz Games across four full
-# pages of three plus a final page of two, and eleven Arcade Games across
-# three full pages of three plus a final page of two. If the roster changes,
+# pages of three plus a final page of two, and twelve Arcade Games across
+# four full pages of three. If the roster changes,
 # these pagination tests should be revisited.
 def test_categories_cover_every_game():
     assert [c.name for c in menu.categories] == ["Quiz Games", "Arcade Games"]
     assert len(menu.categories[0].games) == 14
-    assert len(menu.categories[1].games) == 11
+    assert len(menu.categories[1].games) == 12
 
 
 def test_category_menu_lists_the_categories():
@@ -155,10 +157,10 @@ def test_arcade_games_third_page_is_a_full_page_of_three():
     assert options(state) == ["<", "Papa Tetris: Bomb", "Tower Defense Duo", "Simon Says", ">"]
 
 
-def test_arcade_games_last_page_holds_the_two_games_that_spilled_over():
+def test_arcade_games_last_page_includes_starship():
     state = click(click(click(arcade_games_menu(), 4), 4), 4)
     assert state.page == 3
-    assert options(state) == ["<", "Ball Machine", "Math Blaster", ""]
+    assert options(state) == ["<", "Ball Machine", "Math Blaster", "Treehouse Starship", ""]
 
 
 def test_selecting_a_game_starts_it_via_get_ready():

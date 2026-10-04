@@ -3,6 +3,9 @@
 On the Pi: `uv run driver.py`
 Simulator: `uv run driver.py --simulator`
 
+Treehouse Starship: `uv run driver.py --starship` (add `--simulator` on a laptop).
+See [Starship controls and first voyage](starship/README.md).
+
 # Editing
 
 Linter: `uvx ruff check`
