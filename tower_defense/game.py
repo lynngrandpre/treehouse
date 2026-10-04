@@ -40,7 +40,7 @@ ENEMY_HEIGHT = 46
 LANE_COLOR = (55, 55, 85)
 AIMED_LANE_COLOR = (85, 85, 130)
 
-ENEMY_BODY_COLOR = (70, 195, 110)
+ENEMY_BODY_COLOR = (150, 235, 170)
 ENEMY_OUTLINE_COLOR = (20, 60, 30)
 ENEMY_ANTENNA_COLOR = (255, 210, 70)
 
@@ -179,7 +179,7 @@ def _draw_enemy(surface: pygame.Surface, enemy: Enemy, lane: int) -> None:
         pygame.draw.circle(surface, (255, 255, 255), eye_center, 7)
         pygame.draw.circle(surface, (10, 10, 10), eye_center, 3)
 
-    draw_text(surface, font(30), enemy.text, (cx, cy + 11), _readable_text_color(ENEMY_BODY_COLOR))
+    draw_text(surface, font(36), enemy.text, (cx, cy + 4), _readable_text_color(ENEMY_BODY_COLOR))
 
 
 @dataclass

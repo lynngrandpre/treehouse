@@ -64,7 +64,7 @@ class Button:
         GPIO.output(self.led_pin, on)
 
     def is_pressed(self) -> bool:
-        return not GPIO.input(self.switch_pin)
+        return not GPIO.input(self.switch_pin) or _gamepad_overrides.get(self.switch_pin, False)
 
 
 buttons = {
@@ -78,6 +78,21 @@ buttons = {
 # Left to right, as the buttons are physically wired up.
 buttons_in_order = [buttons[c] for c in [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.WHITE]]
 
+# Lets a game controller "press" a button or the big red one without touching
+# GPIO at all -- keyed by switch pin so it works the same way under either
+# GPIO backend. gamepad.py is the only writer, every frame; Button.is_pressed
+# and big_red_button_pressed just OR this in alongside the real pin reading.
+_gamepad_overrides: dict[int, bool] = {}
+
+
+def set_button_override(color: Color, pressed: bool) -> None:
+    _gamepad_overrides[buttons[color].switch_pin] = pressed
+
+
+def set_big_red_override(pressed: bool) -> None:
+    _gamepad_overrides[BIG_RED_BUTTON_PIN] = pressed
+
+
 GPIO.setmode(GPIO.BCM)
 
 for button in buttons.values():
@@ -90,4 +105,4 @@ GPIO.setup(BIG_RED_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 def big_red_button_pressed() -> bool:
-    return not GPIO.input(BIG_RED_BUTTON_PIN)
+    return not GPIO.input(BIG_RED_BUTTON_PIN) or _gamepad_overrides.get(BIG_RED_BUTTON_PIN, False)

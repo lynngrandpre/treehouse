@@ -26,6 +26,7 @@ from common import Input, GetReadyScreen, State, font
 # would otherwise see as a union of both possible backends at every call site.
 import sim_gpio
 
+import gamepad
 import menu
 
 # The real device is a small touchscreen run fullscreen at whatever resolution
@@ -179,6 +180,11 @@ def run(initial_state: State) -> None:
         state = initial_state
         idle_monitor = IdleMonitor()
         while not game_over:
+            # Pumped early so any connected joystick's button/hat state is
+            # fresh by the time gamepad.poll() (and is_pressed() below) reads it.
+            pygame.event.pump()
+            gamepad.poll()
+
             if SIMULATOR:
                 _update_simulated_input(button_rects)
 
