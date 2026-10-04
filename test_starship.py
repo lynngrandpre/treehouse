@@ -324,6 +324,21 @@ def test_pause_does_not_advance_combat_or_cooldowns(tmp_path: Path):
     assert state.world.time == 0
 
 
+def test_held_menu_confirm_does_not_fire_a_ship_system(tmp_path: Path):
+    state = StarshipState(Universe(), tmp_path / "save.json")
+    sim_gpio.set_input_state(buttons_in_order[2].switch_pin, True)
+    state.next_state(Input(buttons_in_order, 100))
+    assert state.mode == "flight"
+    state.next_state(Input(buttons_in_order, 150))
+    assert state.world.shield_timer == 0
+    assert state.world.ship.energy == 100
+    sim_gpio.set_input_state(buttons_in_order[2].switch_pin, False)
+    state.next_state(Input(buttons_in_order, 200))
+    sim_gpio.set_input_state(buttons_in_order[2].switch_pin, True)
+    state.next_state(Input(buttons_in_order, 250))
+    assert state.world.shield_timer > 0
+
+
 def test_all_screens_render_at_device_and_laptop_sizes(tmp_path: Path):
     pygame.font.init()
     state = StarshipState(Universe(), tmp_path / "save.json")

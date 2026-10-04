@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from array import array
+from dataclasses import replace
 from pathlib import Path
 
 import pygame
@@ -66,6 +67,7 @@ class StarshipState:
         self.pilot_connected = False
         self.wing_keyboard = False
         self.exit_requested = False
+        self.await_release = False
 
     def save(self) -> bool:
         if getattr(self.world, "save_blocked", False):
@@ -90,6 +92,8 @@ class StarshipState:
     def set_mode(self, mode: str) -> None:
         self.mode = mode
         self.selection = 0
+        if mode == "flight":
+            self.await_release = True
 
     def menu_items(self) -> list[tuple[str, str]]:
         c = self.world.campaign
@@ -231,6 +235,10 @@ class StarshipState:
         if "wing_keyboard" in pressed:
             self.wing_keyboard = not self.wing_keyboard
         if self.mode == "flight":
+            if self.await_release:
+                if not any(controls.modules) and not controls.fire and not controls.wing_fire:
+                    self.await_release = False
+                controls = replace(controls, modules=(False,) * 5, fire=False, wing_fire=False)
             if "pause" in pressed:
                 self.save()
                 self.set_mode("pause")
