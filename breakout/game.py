@@ -68,6 +68,8 @@ BALL_RADIUS = 8
 INITIAL_BALL_VX = 150
 INITIAL_BALL_VY = -260
 MAX_BALL_VX = 300  # how much paddle-edge hits can redirect the ball sideways
+SPEED_UP_EVERY_N_BRICKS = 10  # every this many bricks hit, the ball gets a bit faster
+SPEED_UP_FACTOR = 1.1
 SERVE_DELAY_MS = 1000  # pause after a miss before the next ball drops in
 GAME_OVER_DELAY_MS = 3000  # let the fully revealed face sit a moment before the result screen
 
@@ -178,12 +180,12 @@ def _draw_shocked_face(surface: pygame.Surface, rect: pygame.Rect) -> None:
 REVEAL_FACES = [_draw_grinning_face, _draw_winking_face, _draw_shocked_face]
 
 
-def _served_ball(paddle_x: float) -> tuple[float, float, float, float]:
+def _served_ball(paddle_x: float, speed_multiplier: float = 1.0) -> tuple[float, float, float, float]:
     """Ball position/velocity for a fresh serve, resting just above the
     paddle's current position."""
     ball_x = paddle_x + PADDLE_WIDTH / 2
     ball_y = PADDLE_Y - BALL_RADIUS - 1
-    return ball_x, ball_y, float(INITIAL_BALL_VX), float(INITIAL_BALL_VY)
+    return ball_x, ball_y, INITIAL_BALL_VX * speed_multiplier, INITIAL_BALL_VY * speed_multiplier
 
 
 @dataclass
@@ -208,6 +210,10 @@ class BreakoutState:
     # engaged until that time passes, regardless of whether the buttons are
     # still down, rather than cutting out the instant they're released.
     turbo_until: int | None = None
+    # Multiplies the ball's base speed; bumped up by SPEED_UP_FACTOR every
+    # SPEED_UP_EVERY_N_BRICKS bricks hit, and stays in effect (including
+    # across a re-serve after a miss) for the rest of the game.
+    speed_multiplier: float = 1.0
     # Which silly face (index into REVEAL_FACES) is hiding behind this game's
     # bricks -- picked once when the game starts and fixed for its duration.
     reveal_face: int = 0
@@ -282,7 +288,7 @@ class BreakoutState:
         if self.serve_at is not None:
             if current_time < self.serve_at:
                 return self
-            self.ball_x, self.ball_y, self.ball_vx, self.ball_vy = _served_ball(self.paddle_x)
+            self.ball_x, self.ball_y, self.ball_vx, self.ball_vy = _served_ball(self.paddle_x, self.speed_multiplier)
             self.serve_at = None
             return self
 
@@ -308,7 +314,7 @@ class BreakoutState:
         ):
             self.ball_y = PADDLE_Y - BALL_RADIUS
             offset = (self.ball_x - (self.paddle_x + PADDLE_WIDTH / 2)) / (PADDLE_WIDTH / 2)
-            self.ball_vx = max(-1.0, min(1.0, offset)) * MAX_BALL_VX
+            self.ball_vx = max(-1.0, min(1.0, offset)) * MAX_BALL_VX * self.speed_multiplier
             self.ball_vy = -abs(self.ball_vy)
 
         ball_rect = pygame.Rect(self.ball_x - BALL_RADIUS, self.ball_y - BALL_RADIUS, BALL_RADIUS * 2, BALL_RADIUS * 2)
@@ -320,6 +326,10 @@ class BreakoutState:
                     self.bricks[row][col] = False
                     self.bricks_remaining -= 1
                     self.ball_vy = -self.ball_vy
+                    if (TOTAL_BRICKS - self.bricks_remaining) % SPEED_UP_EVERY_N_BRICKS == 0:
+                        self.speed_multiplier *= SPEED_UP_FACTOR
+                        self.ball_vx *= SPEED_UP_FACTOR
+                        self.ball_vy *= SPEED_UP_FACTOR
                     break
             else:
                 continue
@@ -355,6 +365,7 @@ class RulesScreen:
             ("Red = paddle left, Yellow = paddle right", white),
             ("Hold White + Red/Yellow for a 15-second turbo boost", (255, 180, 60)),
             ("The ball bounces on its own -- keep it in play.", white),
+            ("The ball speeds up a bit every 10 bricks you hit.", white),
             ("Clear every brick to win.", white),
             ("Watch for a silly face hiding behind the bricks!", (255, 180, 60)),
             (f"Miss the ball {STARTING_LIVES} times and it's game over.", white),

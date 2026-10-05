@@ -33,22 +33,25 @@ ENEMY_GAP_X = 14
 ENEMY_GAP_Y = 16
 ENEMY_TOP = HUD_HEIGHT + 20
 ENEMY_LEFT = (CANVAS_WIDTH - (ENEMY_COLS * ENEMY_WIDTH + (ENEMY_COLS - 1) * ENEMY_GAP_X)) // 2
-ENEMY_GRID_WIDTH = ENEMY_COLS * ENEMY_WIDTH + (ENEMY_COLS - 1) * ENEMY_GAP_X
-ENEMY_GRID_HEIGHT = ENEMY_ROWS * ENEMY_HEIGHT + (ENEMY_ROWS - 1) * ENEMY_GAP_Y
-ENEMY_COLOR = (70, 200, 90)
+# The formation gets to swing almost edge to edge -- a much tighter margin
+# than the player ship's PLAY_LEFT/PLAY_RIGHT -- so it travels noticeably
+# farther each way before bouncing, instead of turning around well short of
+# the screen's sides.
+ENEMY_BOUND_LEFT = 10
+ENEMY_BOUND_RIGHT = CANVAS_WIDTH - 10
+# One cute color per row rather than a single flat color, same idea as Breakout's brick rows.
+ENEMY_ROW_COLORS = [(230, 120, 60), (230, 200, 60), (120, 210, 90), (90, 170, 230)]
 TOTAL_ENEMIES = ENEMY_ROWS * ENEMY_COLS
 
 ENEMY_SPEED = 60  # pixels per second the whole formation drifts sideways
 ENEMY_STEP_DOWN = 24  # pixels the formation drops each time it bounces off a wall
+SPEED_UP_EVERY_N_ENEMIES = 10  # every this many aliens shot down, the formation gets a bit faster
+SPEED_UP_FACTOR = 1.15
 
 PLAYER_WIDTH = 60
 PLAYER_HEIGHT = 16
 PLAYER_Y = CANVAS_HEIGHT - 40
 PLAYER_SPEED = 320  # pixels per second
-
-# If the formation's leading edge reaches this line, they've reached the
-# player -- an instant loss regardless of remaining lives.
-DANGER_LINE_Y = PLAYER_Y - 10
 
 BULLET_WIDTH = 4
 BULLET_HEIGHT = 14
@@ -59,6 +62,17 @@ ENEMY_SHOT_MAX_INTERVAL_MS = 1400
 
 STARTING_LIVES = 3
 RESPAWN_DELAY_MS = 1000  # pause after being hit before the formation resumes
+
+# A bonus saucer that occasionally zips across the top of the screen -- shoot
+# it for extra points. Independent of the main formation entirely.
+UFO_WIDTH = 46
+UFO_HEIGHT = 20
+UFO_Y = HUD_HEIGHT + 4
+UFO_SPEED = 140  # pixels per second
+UFO_BONUS_POINTS = 5
+UFO_MIN_INTERVAL_MS = 8_000
+UFO_MAX_INTERVAL_MS = 16_000
+UFO_COLOR = (230, 80, 200)
 
 WIN_MESSAGE = "Every invader cleared -- Earth is safe!"
 
@@ -73,8 +87,82 @@ def _enemy_rect(row: int, col: int, offset_x: float, offset_y: float) -> pygame.
     return pygame.Rect(round(x), round(y), ENEMY_WIDTH, ENEMY_HEIGHT)
 
 
+def _alive_columns(enemies: list[list[bool]]) -> list[int]:
+    return [col for col in range(ENEMY_COLS) if any(enemies[row][col] for row in range(ENEMY_ROWS))]
+
+
 def _next_enemy_shot_delay() -> int:
     return random.randint(ENEMY_SHOT_MIN_INTERVAL_MS, ENEMY_SHOT_MAX_INTERVAL_MS)
+
+
+def _next_ufo_delay() -> int:
+    return random.randint(UFO_MIN_INTERVAL_MS, UFO_MAX_INTERVAL_MS)
+
+
+PLAYER_HULL_COLOR = (90, 200, 255)
+PLAYER_ACCENT_COLOR = (255, 210, 60)
+
+
+def _draw_ship(surface: pygame.Surface, rect: pygame.Rect) -> None:
+    """A little fighter jet instead of a plain block: swept wings, a canopy,
+    and a cannon barrel poking out the front."""
+    pygame.draw.polygon(surface, PLAYER_ACCENT_COLOR, [
+        (rect.left, rect.bottom), (rect.left - 10, rect.bottom), (rect.left + rect.w * 0.2, rect.top + 2),
+    ])
+    pygame.draw.polygon(surface, PLAYER_ACCENT_COLOR, [
+        (rect.right, rect.bottom), (rect.right + 10, rect.bottom), (rect.right - rect.w * 0.2, rect.top + 2),
+    ])
+
+    pygame.draw.polygon(surface, PLAYER_HULL_COLOR, [
+        (rect.left + rect.w * 0.1, rect.bottom), (rect.right - rect.w * 0.1, rect.bottom),
+        (rect.right - rect.w * 0.3, rect.top), (rect.left + rect.w * 0.3, rect.top),
+    ])
+
+    barrel = pygame.Rect(0, 0, max(4, round(rect.w * 0.12)), round(rect.h * 1.4))
+    barrel.midbottom = (rect.centerx, rect.top + 2)
+    pygame.draw.rect(surface, PLAYER_ACCENT_COLOR, barrel, border_radius=2)
+
+    pygame.draw.circle(surface, (255, 255, 255), rect.center, max(3, rect.h // 4))
+    pygame.draw.circle(surface, (40, 120, 200), rect.center, max(3, rect.h // 4), 1)
+
+
+def _draw_ufo(surface: pygame.Surface, rect: pygame.Rect) -> None:
+    """A little flying saucer: a wide disc body with a glowing dome and a
+    row of lights along the bottom rim."""
+    pygame.draw.ellipse(surface, UFO_COLOR, rect)
+    dome = pygame.Rect(0, 0, round(rect.w * 0.5), round(rect.h * 0.9))
+    dome.center = (rect.centerx, rect.top + 2)
+    pygame.draw.ellipse(surface, (210, 245, 255), dome)
+    for dx in (-rect.w * 0.3, 0, rect.w * 0.3):
+        pygame.draw.circle(surface, (255, 255, 255), (round(rect.centerx + dx), rect.bottom - 3), 2)
+
+
+def _draw_alien(surface: pygame.Surface, rect: pygame.Rect, row: int) -> None:
+    """A little bug-eyed alien instead of a plain block: rounded body, two
+    big eyes, a pair of antennae, and stubby feet. Row determines its color,
+    purely for variety -- same shape for every alien."""
+    color = ENEMY_ROW_COLORS[row % len(ENEMY_ROW_COLORS)]
+
+    antenna_y = rect.top - 6
+    for dx in (-rect.w // 4, rect.w // 4):
+        x = rect.centerx + dx
+        pygame.draw.line(surface, color, (x, rect.top + 2), (x, antenna_y), 2)
+        pygame.draw.circle(surface, color, (x, antenna_y), 3)
+
+    body = rect.inflate(0, -6)
+    body.top = rect.top + 4
+    pygame.draw.ellipse(surface, color, body)
+
+    for dx in (-rect.w // 5, rect.w // 5):
+        foot_x = rect.centerx + dx
+        pygame.draw.line(surface, color, (foot_x, body.bottom - 2), (foot_x, rect.bottom), 3)
+
+    eye_radius = max(3, rect.h // 6)
+    pupil_radius = max(1, eye_radius // 2)
+    for dx in (-rect.w // 5, rect.w // 5):
+        eye_center = (rect.centerx + dx, body.centery - 2)
+        pygame.draw.circle(surface, (255, 255, 255), eye_center, eye_radius)
+        pygame.draw.circle(surface, (20, 20, 20), eye_center, pupil_radius)
 
 
 def _light_control_leds() -> None:
@@ -114,6 +202,10 @@ class SpaceInvadersState:
     player_bullet: list[float] | None = None  # [x, y] or None
     lives: int = STARTING_LIVES
     score: int = 0
+    # Multiplies the formation's drift speed; bumped up by SPEED_UP_FACTOR
+    # every SPEED_UP_EVERY_N_ENEMIES shot down, and stays in effect for the
+    # rest of the game.
+    speed_multiplier: float = 1.0
     # None only on the very first frame, before we've measured a delta -- lets
     # everything sit still for one frame instead of jumping however long it
     # took to get from process start (or the rules screen) to here.
@@ -121,6 +213,10 @@ class SpaceInvadersState:
     # Set to a future timestamp after the player is hit; the formation and
     # enemy fire pause until then, giving a beat before the action resumes.
     respawn_at: int | None = None
+    # None whenever the bonus UFO isn't on screen; its x position while it is.
+    ufo_x: float | None = None
+    ufo_dir: int = 1
+    next_ufo_at: int = 0
 
     def __post_init__(self) -> None:
         if self.enemy_bullets is None:
@@ -130,14 +226,17 @@ class SpaceInvadersState:
         surface.fill((10, 10, 25))
         white = (255, 255, 255)
         draw_text(surface, font(20), f"Lives: {self.lives}", (80, 20), white)
-        draw_text(surface, font(20), f"Score: {self.score}", (CANVAS_WIDTH - 90, 20), white)
+        draw_text(surface, font(28), f"Score: {self.score}", (CANVAS_WIDTH - 110, 22), white)
 
         for row in range(ENEMY_ROWS):
             for col in range(ENEMY_COLS):
                 if self.enemies[row][col]:
-                    pygame.draw.rect(surface, ENEMY_COLOR, _enemy_rect(row, col, self.enemy_offset_x, self.enemy_offset_y))
+                    _draw_alien(surface, _enemy_rect(row, col, self.enemy_offset_x, self.enemy_offset_y), row)
 
-        pygame.draw.rect(surface, white, (self.player_x, PLAYER_Y, PLAYER_WIDTH, PLAYER_HEIGHT))
+        if self.ufo_x is not None:
+            _draw_ufo(surface, pygame.Rect(round(self.ufo_x), UFO_Y, UFO_WIDTH, UFO_HEIGHT))
+
+        _draw_ship(surface, pygame.Rect(round(self.player_x), PLAYER_Y, PLAYER_WIDTH, PLAYER_HEIGHT))
 
         if self.player_bullet is not None:
             x, y = self.player_bullet
@@ -164,6 +263,7 @@ class SpaceInvadersState:
         if self.last_update_time is None:
             self.last_update_time = current_time
             self.next_enemy_shot_at = current_time + _next_enemy_shot_delay()
+            self.next_ufo_at = current_time + _next_ufo_delay()
             return self
         dt = max(0, current_time - self.last_update_time) / 1000.0
         self.last_update_time = current_time
@@ -189,40 +289,64 @@ class SpaceInvadersState:
             if self.player_bullet[1] + BULLET_HEIGHT < HUD_HEIGHT:
                 self.player_bullet = None
 
-        self.enemy_offset_x += self.enemy_dir * ENEMY_SPEED * dt
-        formation_left = ENEMY_LEFT + self.enemy_offset_x
-        formation_right = formation_left + ENEMY_GRID_WIDTH
-        if formation_left <= PLAY_LEFT:
-            self.enemy_offset_x = PLAY_LEFT - ENEMY_LEFT
-            self.enemy_dir = 1
-            self.enemy_offset_y += ENEMY_STEP_DOWN
-        elif formation_right >= PLAY_RIGHT:
-            self.enemy_offset_x = PLAY_RIGHT - ENEMY_LEFT - ENEMY_GRID_WIDTH
-            self.enemy_dir = -1
-            self.enemy_offset_y += ENEMY_STEP_DOWN
+        # Only the live columns bound the formation -- as the outer ones are
+        # shot out, the remaining block has farther to drift before its edge
+        # reaches a wall and the whole thing steps down.
+        alive_cols = _alive_columns(self.enemies)
+        if alive_cols:
+            left_col, right_col = min(alive_cols), max(alive_cols)
+            live_left = ENEMY_LEFT + left_col * (ENEMY_WIDTH + ENEMY_GAP_X)
+            live_right = ENEMY_LEFT + right_col * (ENEMY_WIDTH + ENEMY_GAP_X) + ENEMY_WIDTH
 
-        if ENEMY_TOP + self.enemy_offset_y + ENEMY_GRID_HEIGHT >= DANGER_LINE_Y:
-            _clear_control_leds()
-            return SpaceInvadersResultScreen(won=False, score=self.score)
+            self.enemy_offset_x += self.enemy_dir * ENEMY_SPEED * self.speed_multiplier * dt
+            formation_left = live_left + self.enemy_offset_x
+            formation_right = live_right + self.enemy_offset_x
+            if formation_left <= ENEMY_BOUND_LEFT:
+                self.enemy_offset_x = ENEMY_BOUND_LEFT - live_left
+                self.enemy_dir = 1
+                self.enemy_offset_y += ENEMY_STEP_DOWN
+            elif formation_right >= ENEMY_BOUND_RIGHT:
+                self.enemy_offset_x = ENEMY_BOUND_RIGHT - live_right
+                self.enemy_dir = -1
+                self.enemy_offset_y += ENEMY_STEP_DOWN
+
+        if self.ufo_x is None:
+            if current_time >= self.next_ufo_at:
+                self.ufo_dir = random.choice((-1, 1))
+                self.ufo_x = PLAY_LEFT - UFO_WIDTH if self.ufo_dir == 1 else PLAY_RIGHT
+        else:
+            self.ufo_x += self.ufo_dir * UFO_SPEED * dt
+            if self.ufo_x > PLAY_RIGHT or self.ufo_x + UFO_WIDTH < PLAY_LEFT:
+                self.ufo_x = None
+                self.next_ufo_at = current_time + _next_ufo_delay()
 
         if self.player_bullet is not None:
             bullet_rect = pygame.Rect(
                 round(self.player_bullet[0] - BULLET_WIDTH / 2), round(self.player_bullet[1]),
                 BULLET_WIDTH, BULLET_HEIGHT,
             )
-            for row in range(ENEMY_ROWS):
-                for col in range(ENEMY_COLS):
-                    if not self.enemies[row][col]:
+            ufo_rect = pygame.Rect(round(self.ufo_x), UFO_Y, UFO_WIDTH, UFO_HEIGHT) if self.ufo_x is not None else None
+            if ufo_rect is not None and bullet_rect.colliderect(ufo_rect):
+                self.score += UFO_BONUS_POINTS
+                self.player_bullet = None
+                self.ufo_x = None
+                self.next_ufo_at = current_time + _next_ufo_delay()
+            else:
+                for row in range(ENEMY_ROWS):
+                    for col in range(ENEMY_COLS):
+                        if not self.enemies[row][col]:
+                            continue
+                        if bullet_rect.colliderect(_enemy_rect(row, col, self.enemy_offset_x, self.enemy_offset_y)):
+                            self.enemies[row][col] = False
+                            self.enemies_remaining -= 1
+                            self.score += 1
+                            self.player_bullet = None
+                            if (TOTAL_ENEMIES - self.enemies_remaining) % SPEED_UP_EVERY_N_ENEMIES == 0:
+                                self.speed_multiplier *= SPEED_UP_FACTOR
+                            break
+                    else:
                         continue
-                    if bullet_rect.colliderect(_enemy_rect(row, col, self.enemy_offset_x, self.enemy_offset_y)):
-                        self.enemies[row][col] = False
-                        self.enemies_remaining -= 1
-                        self.score += 1
-                        self.player_bullet = None
-                        break
-                else:
-                    continue
-                break
+                    break
 
         if self.enemies_remaining <= 0:
             _clear_control_leds()
@@ -237,8 +361,16 @@ class SpaceInvadersState:
             self.next_enemy_shot_at = current_time + _next_enemy_shot_delay()
 
         player_rect = pygame.Rect(round(self.player_x), PLAYER_Y, PLAYER_WIDTH, PLAYER_HEIGHT)
+
+        # An alien has to actually reach and touch the ship to cost a life --
+        # not just have the formation's row reach the ship's height.
+        hit = any(
+            self.enemies[row][col]
+            and _enemy_rect(row, col, self.enemy_offset_x, self.enemy_offset_y).colliderect(player_rect)
+            for row in range(ENEMY_ROWS) for col in range(ENEMY_COLS)
+        )
+
         surviving_bullets = []
-        hit = False
         for x, y in self.enemy_bullets:
             y += ENEMY_BULLET_SPEED * dt
             if y > CANVAS_HEIGHT:
@@ -259,7 +391,7 @@ class SpaceInvadersState:
         """A random alive enemy from the bottom-most alive row of a random
         column that still has one -- so shots always come from the formation's
         front line, never from behind a comrade."""
-        columns_with_enemies = [col for col in range(ENEMY_COLS) if any(self.enemies[row][col] for row in range(ENEMY_ROWS))]
+        columns_with_enemies = _alive_columns(self.enemies)
         if not columns_with_enemies:
             return None
         col = random.choice(columns_with_enemies)
@@ -284,6 +416,8 @@ class RulesScreen:
             ("Red = ship left, Blue = ship right", white),
             ("Green = fire (one bullet at a time)", white),
             ("Clear every invader to win.", white),
+            ("They speed up a bit every 10 you shoot down.", white),
+            ("Watch for the bonus saucer -- shoot it for extra points!", (255, 180, 60)),
             ("Don't let them reach you, and watch out for their fire.", white),
             (f"Get hit {STARTING_LIVES} times and it's game over.", white),
         ]

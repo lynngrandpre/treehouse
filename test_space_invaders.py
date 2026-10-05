@@ -6,7 +6,6 @@ import sim_gpio
 from common import Input
 from hardware import BIG_RED_BUTTON_PIN, Color, buttons, buttons_in_order
 from space_invaders.game import (
-    CANVAS_HEIGHT,
     ENEMY_COLS,
     ENEMY_ROWS,
     HUD_HEIGHT,
@@ -154,17 +153,41 @@ def test_clearing_every_enemy_wins():
     assert result.score == 1
 
 
-def test_enemy_reaching_the_danger_line_ends_the_game():
+def test_an_alien_touching_the_player_costs_a_life_instead_of_merely_reaching_its_row():
+    enemies = [[False] * ENEMY_COLS for _ in range(ENEMY_ROWS)]
+    enemies[ENEMY_ROWS - 1][2] = True
+    rect = _enemy_rect(ENEMY_ROWS - 1, 2, 0, 0)
     state = SpaceInvadersState(
         player_x=300,
-        enemies=[[True] * ENEMY_COLS for _ in range(ENEMY_ROWS)],
-        enemies_remaining=TOTAL_ENEMIES,
-        enemy_offset_y=CANVAS_HEIGHT,  # formation already reached the ship
+        enemies=enemies,
+        enemies_remaining=1,
+        # Positioned so the alien's rect actually overlaps the player's, not
+        # just level with the player's row.
+        enemy_offset_y=PLAYER_Y - rect.y - 5,
+        lives=STARTING_LIVES,
         last_update_time=1_000,
     )
-    result = state.next_state(held(current_time=1_100))
-    assert isinstance(result, SpaceInvadersResultScreen)
-    assert result.won is False
+    result = state.next_state(held(current_time=1_010))
+    assert result is state
+    assert state.lives == STARTING_LIVES - 1
+    assert state.respawn_at == 1_010 + RESPAWN_DELAY_MS
+
+
+def test_an_alien_merely_reaching_the_players_row_without_overlapping_is_not_a_hit():
+    enemies = [[False] * ENEMY_COLS for _ in range(ENEMY_ROWS)]
+    enemies[ENEMY_ROWS - 1][2] = True
+    rect = _enemy_rect(ENEMY_ROWS - 1, 2, 0, 0)
+    state = SpaceInvadersState(
+        player_x=600,  # far from the alien's column, so no overlap
+        enemies=enemies,
+        enemies_remaining=1,
+        enemy_offset_y=PLAYER_Y - rect.y,
+        lives=STARTING_LIVES,
+        last_update_time=1_000,
+    )
+    result = state.next_state(held(current_time=1_010))
+    assert result is state
+    assert state.lives == STARTING_LIVES
 
 
 def test_enemy_bullet_hitting_the_player_costs_a_life_and_starts_the_respawn_delay():
