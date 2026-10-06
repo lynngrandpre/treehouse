@@ -1,6 +1,6 @@
-"""Tower Defense Duo: Player 1 aims the tower with Red (up a lane) and Green
-(down a lane); Player 2 answers the aimed lane's math problem with Blue,
-Yellow, or White. The correct answer fires and destroys the enemy; a wrong
+"""Tower Defense Duo: Player 1 aims the tower with Yellow (up a lane) and
+White (down a lane); Player 2 answers the aimed lane's math problem with Red,
+Green, or Blue. The correct answer fires and destroys the enemy; a wrong
 guess does nothing. Let an enemy reach the tower and it costs a life -- and
 sends that same enemy back around with the same problem, so it has to be
 answered eventually. Lose all your lives and the game's over. Every 25
@@ -56,8 +56,8 @@ BREACH_FLASH_COLOR = (255, 40, 40, 70)
 STARTING_LIVES = 3
 
 # Buttons that answer the aimed lane's problem, in the same order as each
-# Enemy's `choices` list -- choices[0] is the Blue answer, and so on.
-ANSWER_BUTTONS = [Color.BLUE, Color.YELLOW, Color.WHITE]
+# Enemy's `choices` list -- choices[0] is the Red answer, and so on.
+ANSWER_BUTTONS = [Color.RED, Color.GREEN, Color.BLUE]
 
 # Every LEVEL_UP_EVERY points, the game levels up and a LevelUpScreen breather
 # announces it. Levels alternate what gets harder: odd levels speed the
@@ -187,7 +187,7 @@ class Enemy:
     x: float
     text: str
     correct_answer: int
-    choices: list[int]  # answers for Blue, Yellow, White, in that order
+    choices: list[int]  # answers for Red, Green, Blue, in that order
     # Only one guess per lap -- once used, further presses do nothing until this
     # enemy reaches the tower and comes back around for another try.
     guess_used: bool = False
@@ -221,12 +221,12 @@ class TowerDefenseState:
             self.score += 1
 
     def _light_control_leds(self) -> None:
-        """Red/Green always aim the tower. Blue/Yellow/White answer the aimed
+        """Yellow/White always aim the tower. Red/Green/Blue answer the aimed
         lane's problem, but only while that enemy still has a guess left --
         once it's used them, those three go dark until the aim moves or the
         enemy comes back around."""
-        buttons[Color.RED].set_led(True)
-        buttons[Color.GREEN].set_led(True)
+        buttons[Color.YELLOW].set_led(True)
+        buttons[Color.WHITE].set_led(True)
         enemy = self.lanes[self.current_lane]
         can_guess = enemy is not None and not enemy.guess_used
         for color in ANSWER_BUTTONS:
@@ -305,14 +305,14 @@ class TowerDefenseState:
 
         self._light_control_leds()
 
-        red_held = buttons[Color.RED].is_pressed()
-        green_held = buttons[Color.GREEN].is_pressed()
-        if red_held and not self.red_was_held:
+        yellow_held = buttons[Color.YELLOW].is_pressed()
+        white_held = buttons[Color.WHITE].is_pressed()
+        if yellow_held and not self.yellow_was_held:
             self.current_lane = max(0, self.current_lane - 1)
-        if green_held and not self.green_was_held:
+        if white_held and not self.white_was_held:
             self.current_lane = min(LANES - 1, self.current_lane + 1)
-        self.red_was_held = red_held
-        self.green_was_held = green_held
+        self.yellow_was_held = yellow_held
+        self.white_was_held = white_held
 
         for i, color in enumerate(ANSWER_BUTTONS):
             attr = f"{color.name.lower()}_was_held"
@@ -402,8 +402,8 @@ class RulesScreen:
         draw_text(surface, font(44), "Tower Defense Duo", (CANVAS_WIDTH // 2, 46), white)
 
         lines = [
-            ("Player 1: Red = aim up a lane, Green = aim down", white),
-            ("Player 2: Blue/Yellow/White = the aimed problem's answer", white),
+            ("Player 1: Yellow = aim up a lane, White = aim down", white),
+            ("Player 2: Red/Green/Blue = the aimed problem's answer", white),
             ("Answer correctly to fire and destroy that enemy.", white),
             ("Let one reach the tower and you lose a life.", white),
             (f"Lose all {STARTING_LIVES} lives and it's game over.", white),

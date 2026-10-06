@@ -80,19 +80,19 @@ def test_first_frame_just_anchors_the_clock_and_does_not_move_anything():
     assert state.lanes == [None] * LANES
 
 
-def test_red_and_green_move_the_aim_one_lane_at_a_time():
+def test_yellow_and_white_move_the_aim_one_lane_at_a_time():
     state = new_tower_defense()
     state.next_state(held(current_time=1_000))  # burn the anchor frame
 
-    state.next_state(held(RED, current_time=1_050))
+    state.next_state(held(YELLOW, current_time=1_050))
     assert state.current_lane == LANES // 2 - 1
 
     state.next_state(release())
-    state.next_state(held(GREEN, current_time=1_100))
+    state.next_state(held(WHITE, current_time=1_100))
     assert state.current_lane == LANES // 2
 
     state.next_state(release())
-    state.next_state(held(GREEN, current_time=1_150))
+    state.next_state(held(WHITE, current_time=1_150))
     assert state.current_lane == LANES // 2 + 1
 
 
@@ -102,27 +102,27 @@ def test_aim_is_clamped_within_the_lanes():
 
     t = 1_050
     for _ in range(10):
-        state.next_state(held(RED, current_time=t))
+        state.next_state(held(YELLOW, current_time=t))
         state.next_state(release())
         t += 10
     assert state.current_lane == 0
 
     for _ in range(10):
-        state.next_state(held(GREEN, current_time=t))
+        state.next_state(held(WHITE, current_time=t))
         state.next_state(release())
         t += 10
     assert state.current_lane == LANES - 1
 
 
-def test_holding_red_only_moves_the_aim_once():
+def test_holding_yellow_only_moves_the_aim_once():
     state = new_tower_defense()
     state.next_state(held(current_time=1_000))
     starting_lane = state.current_lane
 
-    state.next_state(held(RED, current_time=1_050))
+    state.next_state(held(YELLOW, current_time=1_050))
     assert state.current_lane == starting_lane - 1
 
-    state.next_state(held(RED, current_time=1_100))
+    state.next_state(held(YELLOW, current_time=1_100))
     assert state.current_lane == starting_lane - 1  # still held, no repeat
 
 
@@ -131,7 +131,7 @@ def test_correct_answer_kills_the_aimed_enemy_and_scores():
     state.next_state(held(current_time=1_000))
     state.lanes[state.current_lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
 
-    state.next_state(held(BLUE, current_time=1_050))
+    state.next_state(held(RED, current_time=1_050))
     assert state.lanes[state.current_lane] is None
     assert state.score == 1
 
@@ -141,7 +141,7 @@ def test_wrong_answer_does_nothing():
     state.next_state(held(current_time=1_000))
     state.lanes[state.current_lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
 
-    state.next_state(held(YELLOW, current_time=1_050))
+    state.next_state(held(GREEN, current_time=1_050))
     assert state.lanes[state.current_lane] is not None
     assert state.score == 0
 
@@ -152,12 +152,12 @@ def test_only_one_guess_per_lap_a_wrong_guess_locks_out_further_presses():
     lane = state.current_lane
     state.lanes[lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
 
-    state.next_state(held(YELLOW, current_time=1_050))  # wrong guess, uses it up
+    state.next_state(held(GREEN, current_time=1_050))  # wrong guess, uses it up
     assert state.lanes[lane] is not None
     assert state.lanes[lane].guess_used is True
 
     state.next_state(release())
-    state.next_state(held(BLUE, current_time=1_100))  # the actually-correct answer, too late
+    state.next_state(held(RED, current_time=1_100))  # the actually-correct answer, too late
     assert state.lanes[lane] is not None
     assert state.score == 0
 
@@ -178,7 +178,7 @@ def test_scoring_past_a_level_threshold_shows_a_getting_harder_break():
     state.score = LEVEL_UP_EVERY - 1
     state.lanes[state.current_lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
 
-    result = state.next_state(held(BLUE, current_time=1_050))
+    result = state.next_state(held(RED, current_time=1_050))
     assert isinstance(result, LevelUpScreen)
     assert result.resume_state is state
     assert result.level == 1
@@ -232,7 +232,7 @@ def test_answering_an_empty_lane_does_nothing():
     state.next_state(held(current_time=1_000))
     assert state.lanes[state.current_lane] is None
 
-    result = state.next_state(held(BLUE, current_time=1_050))
+    result = state.next_state(held(RED, current_time=1_050))
     assert result is state
     assert state.score == 0
 
@@ -257,12 +257,12 @@ def test_answer_leds_go_dark_once_the_aimed_enemys_guess_is_used():
     state.next_state(held(current_time=1_000))
     state.lanes[state.current_lane] = Enemy(x=500, text="3 + 4", correct_answer=7, choices=[7, 3, 9])
 
-    state.next_state(held(YELLOW, current_time=1_050))  # wrong guess, uses it up
+    state.next_state(held(GREEN, current_time=1_050))  # wrong guess, uses it up
     state.next_state(release())
 
-    for color in (Color.BLUE, Color.YELLOW, Color.WHITE):
+    for color in (Color.RED, Color.GREEN, Color.BLUE):
         assert sim_gpio.get_output_state(buttons[color].led_pin) is False
-    for color in (Color.RED, Color.GREEN):
+    for color in (Color.YELLOW, Color.WHITE):
         assert sim_gpio.get_output_state(buttons[color].led_pin) is True
 
 
