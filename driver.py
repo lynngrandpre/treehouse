@@ -12,12 +12,13 @@ for the physical ones.
 
 from __future__ import annotations
 
-import pygame
-
+import sys
 from dataclasses import dataclass
 
-from hardware import SIMULATOR, GPIO, big_red_button_pressed, buttons, buttons_in_order
-from common import Input, GetReadyScreen, State, font
+import pygame
+
+import gamepad
+import menu
 
 # Only ever used in the simulator-only helpers below. Importing it unconditionally
 # (rather than through the same `GPIO` name hardware.py picks based on SIMULATOR)
@@ -25,9 +26,8 @@ from common import Input, GetReadyScreen, State, font
 # real RPi.GPIO interface -- out of hardware.py's GPIO type, which a type checker
 # would otherwise see as a union of both possible backends at every call site.
 import sim_gpio
-
-import gamepad
-import menu
+from common import GetReadyScreen, Input, State, font
+from hardware import GPIO, SIMULATOR, big_red_button_pressed, buttons, buttons_in_order
 
 # The real device is a small touchscreen run fullscreen at whatever resolution
 # it happens to have. The simulator has no such screen to ask, so it stands
@@ -179,17 +179,22 @@ def run(initial_state: State) -> None:
 
         state = initial_state
         idle_monitor = IdleMonitor()
+        clock = pygame.time.Clock()
         while not game_over:
             # Pumped early so any connected joystick's button/hat state is
             # fresh by the time gamepad.poll() (and is_pressed() below) reads it.
             pygame.event.pump()
-            gamepad.poll()
+            gamepad.poll(shared_buttons=not getattr(state, "independent_gamepads", False))
 
             if SIMULATOR:
+                assert button_rects is not None
                 _update_simulated_input(button_rects)
 
             current_time = pygame.time.get_ticks()
-            any_pressed = any(button.is_pressed() for button in buttons_in_order) or big_red_button_pressed()
+            any_pressed = (any(button.is_pressed() for button in buttons_in_order)
+                           or big_red_button_pressed() or gamepad.any_activity())
+            if getattr(state, "independent_gamepads", False):
+                any_pressed = any_pressed or any(pygame.key.get_pressed())
 
             if idle_monitor.update(current_time, any_pressed):
                 device_surface.fill((0, 0, 0))
@@ -203,6 +208,7 @@ def run(initial_state: State) -> None:
                 state.draw(device_surface)
 
             if SIMULATOR:
+                assert button_rects is not None
                 _draw_simulator_chrome(window, device_surface, button_rects)
 
             pygame.display.flip()
@@ -210,11 +216,22 @@ def run(initial_state: State) -> None:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     game_over = True
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                # Starship uses Escape for its save/pause screen.
+                if (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+                        and not getattr(state, "independent_gamepads", False)):
                     game_over = True
+            clock.tick(60)
     finally:
+        close = getattr(state, "on_close", None) if 'state' in locals() else None
+        if callable(close):
+            close()
         GPIO.cleanup()
+        pygame.quit()
 
 
 if __name__ == '__main__':
-    run(menu.home())
+    if "--starship" in sys.argv:
+        from starship.game import StarshipState
+        run(StarshipState())
+    else:
+        run(menu.home())

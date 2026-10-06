@@ -17,12 +17,13 @@ import breakout
 import chain
 import color_game
 import flags
-import math_blaster
 import mastermind
+import math_blaster
 import pacman
 import quiz
 import simon
 import space_invaders
+import starship
 import tetris
 import tower_defense
 import vault
@@ -50,7 +51,8 @@ categories = [
         + tower_defense.games
         + simon.games
         + ball_machine.games
-        + math_blaster.games,
+        + math_blaster.games
+        + starship.games,
     ),
 ]
 
