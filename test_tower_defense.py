@@ -96,22 +96,32 @@ def test_yellow_and_white_move_the_aim_one_lane_at_a_time():
     assert state.current_lane == LANES // 2 + 1
 
 
-def test_aim_is_clamped_within_the_lanes():
+def test_aim_wraps_around_at_the_top_and_bottom_lanes():
+    # Starts in the middle lane (LANES // 2 == 1 of 0..2).
     state = new_tower_defense()
     state.next_state(held(current_time=1_000))
 
     t = 1_050
-    for _ in range(10):
-        state.next_state(held(YELLOW, current_time=t))
-        state.next_state(release())
-        t += 10
-    assert state.current_lane == 0
 
-    for _ in range(10):
-        state.next_state(held(WHITE, current_time=t))
+    def press_and_release(button):
+        nonlocal t
+        state.next_state(held(button, current_time=t))
         state.next_state(release())
         t += 10
+
+    press_and_release(YELLOW)  # up: 1 -> 0
+    assert state.current_lane == 0
+    press_and_release(YELLOW)  # up again: wraps from the top to the bottom
     assert state.current_lane == LANES - 1
+    press_and_release(YELLOW)  # up again: back to the middle
+    assert state.current_lane == 1
+
+    press_and_release(WHITE)  # down: 1 -> 2
+    assert state.current_lane == 2
+    press_and_release(WHITE)  # down again: wraps from the bottom to the top
+    assert state.current_lane == 0
+    press_and_release(WHITE)  # down again: back to the middle
+    assert state.current_lane == 1
 
 
 def test_holding_yellow_only_moves_the_aim_once():

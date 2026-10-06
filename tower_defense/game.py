@@ -308,9 +308,9 @@ class TowerDefenseState:
         yellow_held = buttons[Color.YELLOW].is_pressed()
         white_held = buttons[Color.WHITE].is_pressed()
         if yellow_held and not self.yellow_was_held:
-            self.current_lane = max(0, self.current_lane - 1)
+            self.current_lane = (self.current_lane - 1) % LANES
         if white_held and not self.white_was_held:
-            self.current_lane = min(LANES - 1, self.current_lane + 1)
+            self.current_lane = (self.current_lane + 1) % LANES
         self.yellow_was_held = yellow_held
         self.white_was_held = white_held
 
